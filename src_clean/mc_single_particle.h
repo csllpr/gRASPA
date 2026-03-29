@@ -85,35 +85,14 @@ inline void SingleBody_Prepare(Variables& Vars, size_t systemId)
      SelectedComponent < SystemComponents.UseBlockPockets.size() && 
      SystemComponents.UseBlockPockets[SelectedComponent])
   {
-    // Ensure statistics vectors are large enough
-    if(SelectedComponent >= SystemComponents.BlockPocketTotalAttempts.size())
-    {
-      SystemComponents.BlockPocketTotalAttempts.resize(SelectedComponent + 1, 0);
-      SystemComponents.BlockPocketBlockedCount.resize(SelectedComponent + 1, 0);
-    }
-    
-    // Set move type for blockpocket statistics
     int move_type = 7; // Default to Other
     if(MoveType == TRANSLATION) move_type = 0;
     else if(MoveType == ROTATION || MoveType == SPECIAL_ROTATION) move_type = 1;
     SystemComponents.CurrentBlockedPocketMoveType = move_type;
-    
-    // Check all atoms in the molecule (matching RASPA2: for(i=0;i<nr_atoms;i++) if(BlockedPocket(TrialPosition[i])) return 0;)
-    std::vector<double3> trial_positions(Molsize);
-    cudaMemcpy(trial_positions.data(), &Sims.New.pos[start_position], Molsize * sizeof(double3), cudaMemcpyDeviceToHost);
-    
-    for(size_t i = 0; i < Molsize; i++)
-    {
-      if(BlockedPocket(SystemComponents, SelectedComponent, trial_positions[i], Sims.Box))
-      {
-        // Block the move (set flag to indicate overlap/blocked)
-        bool blocked = true;
-        cudaMemcpy(Sims.device_flag, &blocked, sizeof(bool), cudaMemcpyHostToDevice);
-        SystemComponents.CurrentBlockedPocketMoveType = 7; // Reset to Other
-        return; // Early return, matching RASPA2 behavior
-      }
-    }
+    bool blocked = RejectSequentialBlockedPocketPositions(SystemComponents, Sims, SelectedComponent, Sims.New.pos, Molsize, move_type);
     SystemComponents.CurrentBlockedPocketMoveType = 7; // Reset to Other
+    if(blocked)
+      return;
   }
 }
 

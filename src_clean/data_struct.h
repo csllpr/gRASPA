@@ -1191,6 +1191,8 @@ struct Components
   std::vector<bool>   InvertBlockPockets;             // Invert block pocket logic (allow only inside pockets)
   std::vector<std::vector<double3>> BlockPocketCenters; // Block pocket centers for each component [component][pocket]
   std::vector<std::vector<double>> BlockPocketRadii;  // Block pocket radii for each component [component][pocket]
+  std::vector<double3*> device_BlockPocketCenters;    // Device mirror of block pocket centers for hot-path checks
+  std::vector<double*> device_BlockPocketRadii;       // Device mirror of block pocket radii for hot-path checks
   // Block pocket statistics
   std::vector<size_t> BlockPocketTotalAttempts;       // Total insertion attempts for each component
   std::vector<size_t> BlockPocketBlockedCount;        // Number of blocked insertions for each component

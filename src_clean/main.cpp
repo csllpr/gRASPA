@@ -288,6 +288,7 @@ Variables Initialize(void) //for pybind
       if(comp < Vars.SystemComponents[a].UseBlockPockets.size() && Vars.SystemComponents[a].UseBlockPockets[comp])
       {
         ReplicateBlockPockets(Vars.SystemComponents[a], comp, Vars.Sims[a].Box);
+        SyncDeviceBlockPockets(Vars.SystemComponents[a], comp);
       }
     }
 

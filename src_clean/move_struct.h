@@ -221,44 +221,17 @@ struct ReinsertionMove
        SystemComponents.UseBlockPockets[SelectedComponent] &&
        SystemComponents.Moleculesize[SelectedComponent] > 0)
     {
-      cudaDeviceSynchronize();
       size_t molsize = SystemComponents.Moleculesize[SelectedComponent];
-      double3* host_positions = new double3[molsize];
-      
       size_t SelectedTrial = InsertionVariables.selectedTrial;
       if(molsize > 1) SelectedTrial = InsertionVariables.selectedTrialOrientation;
-      
-      if(molsize == 1)
+      StoreNewLocation_Reinsertion<<<1,molsize>>>(Sims.Old, Sims.New, SystemComponents.tempMolStorage, SelectedTrial, molsize);
+      checkCUDAError("error storing reinsertion trial positions for block pocket check");
+      if(RejectSequentialBlockedPocketPositions(SystemComponents, Sims, SelectedComponent, SystemComponents.tempMolStorage, molsize, 4))
       {
-        // Single atom: StoreNewLocation_Reinsertion stores NewMol.pos[SelectedTrial]
-        cudaMemcpy(host_positions, &Sims.New.pos[SelectedTrial], sizeof(double3), cudaMemcpyDeviceToHost);
+        InsertionVariables.SuccessConstruction = false;
+        InsertionVariables.Rosenbluth = 0.0;
+        return;
       }
-      else
-      {
-        // Multiple atoms: Widom_Move_Chain_PARTIAL sets Sims.Old.pos[0] = selected first bead trial
-        // StoreNewLocation_Reinsertion stores Mol.pos[0] (Sims.Old.pos[0]) for first bead
-        // and NewMol.pos[SelectedTrial*chainsize+(i-1)] for chain atoms
-        cudaMemcpy(&host_positions[0], &Sims.Old.pos[0], sizeof(double3), cudaMemcpyDeviceToHost);
-        
-        size_t chainsize = molsize - 1;
-        for(size_t i = 1; i < molsize; i++)
-        {
-          size_t selectsize = SelectedTrial * chainsize + (i - 1);
-          cudaMemcpy(&host_positions[i], &Sims.New.pos[selectsize], sizeof(double3), cudaMemcpyDeviceToHost);
-        }
-      }
-      
-      for(size_t i = 0; i < molsize; i++)
-      {
-        if(CheckBlockedPosition(SystemComponents, SelectedComponent, host_positions[i], Sims.Box))
-        {
-          delete[] host_positions;
-          InsertionVariables.SuccessConstruction = false;
-          InsertionVariables.Rosenbluth = 0.0;
-          return;
-        }
-      }
-      delete[] host_positions;
     }
     
     //Store the inserted molecule//

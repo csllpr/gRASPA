@@ -605,6 +605,172 @@ static __global__ void get_new_position(Simulations& Sim, ForceField FF, size_t 
   Sim.device_flag[i] = false;
 }
 
+static inline __device__ bool DeviceBlockedPocket(const double3* centers, const double* radii, size_t count, bool invertBlockPockets, const double3& pos, Boxsize Box)
+{
+  if(centers == nullptr || radii == nullptr || count == 0)
+    return false;
+
+  if(invertBlockPockets)
+  {
+    for(size_t i = 0; i < count; i++)
+    {
+      double3 dr = {centers[i].x - pos.x, centers[i].y - pos.y, centers[i].z - pos.z};
+      PBC(dr, Box.Cell, Box.InverseCell, Box.Cubic);
+      double r = sqrt(dr.x * dr.x + dr.y * dr.y + dr.z * dr.z);
+      if(r < radii[i])
+        return false;
+    }
+    return true;
+  }
+
+  for(size_t i = 0; i < count; i++)
+  {
+    double3 dr = {centers[i].x - pos.x, centers[i].y - pos.y, centers[i].z - pos.z};
+    PBC(dr, Box.Cell, Box.InverseCell, Box.Cubic);
+    double r = sqrt(dr.x * dr.x + dr.y * dr.y + dr.z * dr.z);
+    if(r < radii[i])
+      return true;
+  }
+  return false;
+}
+
+static __global__ void Check_Block_Pocket_Positions(Boxsize Box, const double3* positions, size_t positionCount, bool* device_flag, const double3* centers, const double* radii, size_t pocketCount, bool invertBlockPockets)
+{
+  const size_t i = blockIdx.x * blockDim.x + threadIdx.x;
+  if(i >= positionCount)
+    return;
+  device_flag[i] = DeviceBlockedPocket(centers, radii, pocketCount, invertBlockPockets, positions[i], Box);
+}
+
+inline void EnsureBlockPocketStatisticsCapacity(Components& SystemComponents, size_t component)
+{
+  if(SystemComponents.BlockPocketCalls.size() <= component)
+    SystemComponents.BlockPocketCalls.resize(component + 1, 0.0);
+  if(SystemComponents.BlockPocketBlocked.size() <= component)
+    SystemComponents.BlockPocketBlocked.resize(component + 1, 0.0);
+  if(SystemComponents.BlockPocketTotalAttempts.size() <= component)
+    SystemComponents.BlockPocketTotalAttempts.resize(component + 1, 0);
+  if(SystemComponents.BlockPocketBlockedCount.size() <= component)
+    SystemComponents.BlockPocketBlockedCount.resize(component + 1, 0);
+  if(SystemComponents.BlockPocketCallsByMove.size() <= component)
+    SystemComponents.BlockPocketCallsByMove.resize(component + 1);
+  if(SystemComponents.BlockPocketBlockedByMove.size() <= component)
+    SystemComponents.BlockPocketBlockedByMove.resize(component + 1);
+  if(SystemComponents.BlockPocketCallsByMove[component].size() < 8)
+    SystemComponents.BlockPocketCallsByMove[component].resize(8, 0.0);
+  if(SystemComponents.BlockPocketBlockedByMove[component].size() < 8)
+    SystemComponents.BlockPocketBlockedByMove[component].resize(8, 0.0);
+}
+
+inline bool ComponentHasDeviceBlockPockets(const Components& SystemComponents, size_t component)
+{
+  if(component >= SystemComponents.UseBlockPockets.size() || !SystemComponents.UseBlockPockets[component])
+    return false;
+  if(component >= SystemComponents.BlockPocketCenters.size() || component >= SystemComponents.BlockPocketRadii.size())
+    throw std::runtime_error("Block pocket geometry missing for component " + std::to_string(component));
+  if(SystemComponents.BlockPocketCenters[component].size() != SystemComponents.BlockPocketRadii[component].size())
+    throw std::runtime_error("Block pocket geometry size mismatch for component " + std::to_string(component));
+  if(SystemComponents.BlockPocketCenters[component].empty())
+    return false;
+  if(component >= SystemComponents.device_BlockPocketCenters.size() || component >= SystemComponents.device_BlockPocketRadii.size() ||
+     SystemComponents.device_BlockPocketCenters[component] == nullptr || SystemComponents.device_BlockPocketRadii[component] == nullptr)
+  {
+    throw std::runtime_error("Device block pocket mirror missing for component " + std::to_string(component));
+  }
+  return true;
+}
+
+inline void RecordBlockedPocketStatistics(Components& SystemComponents, size_t component, int move_type, size_t checksPerformed, size_t blockedCount)
+{
+  EnsureBlockPocketStatisticsCapacity(SystemComponents, component);
+  SystemComponents.BlockPocketCalls[component] += static_cast<double>(checksPerformed);
+  SystemComponents.BlockPocketTotalAttempts[component] += checksPerformed;
+  if(move_type >= 0 && move_type < 8)
+    SystemComponents.BlockPocketCallsByMove[component][move_type] += static_cast<double>(checksPerformed);
+  if(blockedCount == 0)
+    return;
+  SystemComponents.BlockPocketBlocked[component] += static_cast<double>(blockedCount);
+  SystemComponents.BlockPocketBlockedCount[component] += blockedCount;
+  if(move_type >= 0 && move_type < 8)
+    SystemComponents.BlockPocketBlockedByMove[component][move_type] += static_cast<double>(blockedCount);
+}
+
+inline void LaunchBlockPocketChecks(Components& SystemComponents, Simulations& Sims, size_t component, const double3* device_positions, size_t positionCount)
+{
+  if(positionCount == 0)
+    return;
+  const size_t threads = positionCount < DEFAULTTHREAD ? positionCount : DEFAULTTHREAD;
+  const size_t blocks = (positionCount + threads - 1) / threads;
+  const bool invertBlockPockets = (component < SystemComponents.InvertBlockPockets.size()) && SystemComponents.InvertBlockPockets[component];
+  Check_Block_Pocket_Positions<<<blocks, threads>>>(Sims.Box, device_positions, positionCount, Sims.device_flag,
+                                                    SystemComponents.device_BlockPocketCenters[component],
+                                                    SystemComponents.device_BlockPocketRadii[component],
+                                                    SystemComponents.BlockPocketCenters[component].size(),
+                                                    invertBlockPockets);
+  checkCUDAError("error checking block pockets on the GPU");
+  cudaDeviceSynchronize();
+  CopyDeviceFlagsToHost(SystemComponents, Sims, positionCount);
+}
+
+inline bool RejectSequentialBlockedPocketPositions(Components& SystemComponents, Simulations& Sims, size_t component, const double3* device_positions, size_t positionCount, int move_type)
+{
+  if(!ComponentHasDeviceBlockPockets(SystemComponents, component) || positionCount == 0)
+    return false;
+
+  LaunchBlockPocketChecks(SystemComponents, Sims, component, device_positions, positionCount);
+
+  size_t checksPerformed = 0;
+  bool blocked = false;
+  for(size_t i = 0; i < positionCount; i++)
+  {
+    checksPerformed++;
+    if(SystemComponents.flag[i])
+    {
+      blocked = true;
+      break;
+    }
+  }
+
+  RecordBlockedPocketStatistics(SystemComponents, component, move_type, checksPerformed, blocked ? 1 : 0);
+
+  if(blocked)
+  {
+    bool blockedFlag = true;
+    cudaMemcpy(Sims.device_flag, &blockedFlag, sizeof(bool), cudaMemcpyHostToDevice);
+  }
+  return blocked;
+}
+
+inline void ApplyBlockedPocketTrialFlags(Components& SystemComponents, Simulations& Sims, size_t component, const double3* device_positions, size_t positionCount, int move_type)
+{
+  if(!ComponentHasDeviceBlockPockets(SystemComponents, component) || positionCount == 0)
+    return;
+
+  LaunchBlockPocketChecks(SystemComponents, Sims, component, device_positions, positionCount);
+
+  size_t checksPerformed = 0;
+  size_t blockedCount = 0;
+  if(SystemComponents.flag[0])
+  {
+    checksPerformed = 1;
+    blockedCount = 1;
+    for(size_t i = 0; i < positionCount; i++)
+      SystemComponents.flag[i] = true;
+    cudaMemcpy(Sims.device_flag, SystemComponents.flag, positionCount * sizeof(bool), cudaMemcpyHostToDevice);
+  }
+  else
+  {
+    checksPerformed = positionCount;
+    for(size_t i = 1; i < positionCount; i++)
+    {
+      if(SystemComponents.flag[i])
+        blockedCount++;
+    }
+  }
+
+  RecordBlockedPocketStatistics(SystemComponents, component, move_type, checksPerformed, blockedCount);
+}
+
 ////////////////////////////////////////////////////////////////////////////////////
 // OPTIMIZING THE ACCEPTANCE (MAINTAIN AROUND 0.5) FOR TRANSLATION/ROTATION MOVES //
 ////////////////////////////////////////////////////////////////////////////////////

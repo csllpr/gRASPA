@@ -2593,6 +2593,8 @@ void read_component_values_from_simulation_input(Variables& Vars, Components& Sy
             SystemComponents.InvertBlockPockets.resize(actualComponentIndex + 1, false);
             SystemComponents.BlockPocketCenters.resize(actualComponentIndex + 1);
             SystemComponents.BlockPocketRadii.resize(actualComponentIndex + 1);
+            SystemComponents.device_BlockPocketCenters.resize(actualComponentIndex + 1, nullptr);
+            SystemComponents.device_BlockPocketRadii.resize(actualComponentIndex + 1, nullptr);
             SystemComponents.BlockPocketTotalAttempts.resize(actualComponentIndex + 1, 0);
             SystemComponents.BlockPocketBlockedCount.resize(actualComponentIndex + 1, 0);
           }
@@ -2677,6 +2679,8 @@ void read_component_values_from_simulation_input(Variables& Vars, Components& Sy
     SystemComponents.InvertBlockPockets.resize(actualComponentIndex + 1, false);
     SystemComponents.BlockPocketCenters.resize(actualComponentIndex + 1);
     SystemComponents.BlockPocketRadii.resize(actualComponentIndex + 1);
+    SystemComponents.device_BlockPocketCenters.resize(actualComponentIndex + 1, nullptr);
+    SystemComponents.device_BlockPocketRadii.resize(actualComponentIndex + 1, nullptr);
     SystemComponents.BlockPocketTotalAttempts.resize(actualComponentIndex + 1, 0);
     SystemComponents.BlockPocketBlockedCount.resize(actualComponentIndex + 1, 0);
   }
@@ -3404,6 +3408,8 @@ void ReadBlockPockets(Components& SystemComponents, size_t component, const std:
   {
     SystemComponents.BlockPocketCenters.resize(component + 1);
     SystemComponents.BlockPocketRadii.resize(component + 1);
+    SystemComponents.device_BlockPocketCenters.resize(component + 1, nullptr);
+    SystemComponents.device_BlockPocketRadii.resize(component + 1, nullptr);
   }
   
   SystemComponents.BlockPocketCenters[component].clear();
@@ -3524,6 +3530,43 @@ void ReplicateBlockPockets(Components& SystemComponents, size_t component, Boxsi
   
   fprintf(SystemComponents.OUTPUT, "Replicated block pockets for component %zu: %zu -> %zu total (%s coordinates)\n", 
           component, numPockets, totalPockets, isCartesian ? "Cartesian->fractional" : "fractional");
+}
+
+void SyncDeviceBlockPockets(Components& SystemComponents, size_t component)
+{
+  if(SystemComponents.device_BlockPocketCenters.size() <= component)
+    SystemComponents.device_BlockPocketCenters.resize(component + 1, nullptr);
+  if(SystemComponents.device_BlockPocketRadii.size() <= component)
+    SystemComponents.device_BlockPocketRadii.resize(component + 1, nullptr);
+
+  if(SystemComponents.device_BlockPocketCenters[component] != nullptr)
+  {
+    cudaFree(SystemComponents.device_BlockPocketCenters[component]);
+    SystemComponents.device_BlockPocketCenters[component] = nullptr;
+  }
+  if(SystemComponents.device_BlockPocketRadii[component] != nullptr)
+  {
+    cudaFree(SystemComponents.device_BlockPocketRadii[component]);
+    SystemComponents.device_BlockPocketRadii[component] = nullptr;
+  }
+
+  if(component >= SystemComponents.BlockPocketCenters.size() ||
+     component >= SystemComponents.BlockPocketRadii.size())
+  {
+    return;
+  }
+
+  const auto& centers = SystemComponents.BlockPocketCenters[component];
+  const auto& radii = SystemComponents.BlockPocketRadii[component];
+  if(centers.empty())
+    return;
+  if(centers.size() != radii.size())
+    throw std::runtime_error("Block pocket geometry is inconsistent for component " + std::to_string(component));
+
+  cudaMalloc(&SystemComponents.device_BlockPocketCenters[component], centers.size() * sizeof(double3));
+  cudaMalloc(&SystemComponents.device_BlockPocketRadii[component], radii.size() * sizeof(double));
+  cudaMemcpy(SystemComponents.device_BlockPocketCenters[component], centers.data(), centers.size() * sizeof(double3), cudaMemcpyHostToDevice);
+  cudaMemcpy(SystemComponents.device_BlockPocketRadii[component], radii.data(), radii.size() * sizeof(double), cudaMemcpyHostToDevice);
 }
 
 /*********************************************************************************************************

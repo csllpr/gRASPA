@@ -82,6 +82,8 @@ inline void Update_Components_for_framework(Components& SystemComponents)
     SystemComponents.InvertBlockPockets.push_back(false);
     SystemComponents.BlockPocketCenters.push_back(std::vector<double3>());
     SystemComponents.BlockPocketRadii.push_back(std::vector<double>());
+    SystemComponents.device_BlockPocketCenters.push_back(nullptr);
+    SystemComponents.device_BlockPocketRadii.push_back(nullptr);
     SystemComponents.BlockPocketTotalAttempts.push_back(0);
     SystemComponents.BlockPocketBlockedCount.push_back(0);
     LAMBDA lambda;

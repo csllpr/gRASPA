@@ -57,6 +57,7 @@ void ReadDNNModelSetup(Components& SystemComponents);
 
 void ReadBlockPockets(Components& SystemComponents, size_t component, const std::string& filename);
 void ReplicateBlockPockets(Components& SystemComponents, size_t component, Boxsize& Box);
+void SyncDeviceBlockPockets(Components& SystemComponents, size_t component);
 // Universal BlockedPocket function matching RASPA2 implementation
 // Returns true if position is blocked, false if allowed
 bool BlockedPocket(Components& SystemComponents, size_t component, const double3& pos, Boxsize& Box);

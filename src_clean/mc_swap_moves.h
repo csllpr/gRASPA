@@ -307,30 +307,15 @@ static inline MoveEnergy IdentitySwapMove(Variables& Vars, size_t systemId)
   if(NEWComponent < SystemComponents.UseBlockPockets.size() && 
      SystemComponents.UseBlockPockets[NEWComponent])
   {
-    // Ensure statistics vectors are large enough
-    if(NEWComponent >= SystemComponents.BlockPocketTotalAttempts.size())
-    {
-      SystemComponents.BlockPocketTotalAttempts.resize(NEWComponent + 1, 0);
-      SystemComponents.BlockPocketBlockedCount.resize(NEWComponent + 1, 0);
-    }
-    
-    // Check all atoms in the new molecule configuration (stored in tempMolStorage)
-    std::vector<double3> new_positions(SystemComponents.Moleculesize[NEWComponent]);
-    cudaMemcpy(new_positions.data(), SystemComponents.tempMolStorage, 
-               SystemComponents.Moleculesize[NEWComponent] * sizeof(double3), cudaMemcpyDeviceToHost);
-    
     SystemComponents.CurrentBlockedPocketMoveType = 5; // IdentitySwap
-    for(size_t i = 0; i < SystemComponents.Moleculesize[NEWComponent]; i++)
-    {
-      if(BlockedPocket(SystemComponents, NEWComponent, new_positions[i], Sims.Box))
-      {
-        SystemComponents.CurrentBlockedPocketMoveType = 7; // Reset to Other
-        ResetExcludeList(Sims);
-        energy.zero();
-        return energy; // Block the move, matching RASPA2 behavior
-      }
-    }
+    bool blocked = RejectSequentialBlockedPocketPositions(SystemComponents, Sims, NEWComponent, SystemComponents.tempMolStorage, SystemComponents.Moleculesize[NEWComponent], 5);
     SystemComponents.CurrentBlockedPocketMoveType = 7; // Reset to Other
+    if(blocked)
+    {
+      ResetExcludeList(Sims);
+      energy.zero();
+      return energy; // Block the move, matching RASPA2 behavior
+    }
   }
 
   /////////////
