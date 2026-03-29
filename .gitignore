@@ -2,3 +2,4 @@
 reference_runs/
 src_clean/nvc_main.x
 Examples/**/output.txt
+benchmark/
