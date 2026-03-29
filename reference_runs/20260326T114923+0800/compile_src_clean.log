@@ -1,0 +1,7 @@
+rm: 无法删除 'nvc_main.x': 没有那个文件或目录
+Finished data_struct.cpp
+Finished VDW_Coulomb.cu
+Finished main.cpp
+Finished read_data.cpp
+Finished axpy.cu
+Finished Linking

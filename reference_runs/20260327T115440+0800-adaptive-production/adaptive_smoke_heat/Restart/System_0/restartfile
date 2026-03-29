@@ -1,0 +1,68 @@
+Cell info:
+========================================================================
+number-of-unit-cells: 1 1 1
+unit-cell-vector-a: 38.9814 0 0
+unit-cell-vector-b: -8.55497 38.3293 0
+unit-cell-vector-c: 2.73317e-15 3.41045e-15 44.636
+
+cell-vector-a: 38.9814 0 0
+cell-vector-b: -8.55497 38.3293 0
+cell-vector-c: 2.73317e-15 3.41045e-15 44.636
+
+cell-lengths: 38.9814 38.3293 44.636 
+cell-angles: 90 90 90 
+
+
+Maximum changes for MC-moves:
+========================================================================
+Maximum-volume-change: 0.006250
+Maximum-Gibbs-volume-change: 0.025000
+Maximum-box-shape-change: 0.100000 0.100000 0.100000, 0.100000 0.100000 0.100000, 0.100000 0.100000 0.100000
+
+
+Acceptance targets for MC-moves:
+========================================================================
+Target-volume-change: 0.500000
+Target-box-shape-change: 0.500000
+Target-Gibbs-volume-change: 0.500000
+
+
+Components: 2 (Adsorbates 1, Cations 0)
+========================================================================
+Components 0 (CO2) 
+
+Maximum-translation-change component 0: 3.89814 3.83293 4.4636
+Maximum-translation-in-plane-change component 0: 0.000000,0.000000,0.000000
+Maximum-rotation-change component 0: 0.523583 0.523583 0.523583
+
+Components 0 (methane) 
+
+Maximum-translation-change component 1: 3.89814 3.83293 4.4636
+Maximum-translation-in-plane-change component 1: 0.000000,0.000000,0.000000
+Maximum-rotation-change component 1: 0.523583 0.523583 0.523583
+
+Reactions: 0
+
+Component: 0   Adsorbate 1 molecules of CO2
+------------------------------------------------------------------------
+Adsorbate-atom-position: 0 0 9.46806636062603  5.25998793703549  35.8952336016759
+Adsorbate-atom-position: 0 1 9.31110032635992  6.12590885063603  36.6509733951737
+Adsorbate-atom-position: 0 2 9.15413429209381  6.99182976423657  37.4067131886714
+Adsorbate-atom-velocity: 0 0 0  0  0
+Adsorbate-atom-velocity: 0 1 0  0  0
+Adsorbate-atom-velocity: 0 2 0  0  0
+Adsorbate-atom-force: 0 0 0  0  0
+Adsorbate-atom-force: 0 1 0  0  0
+Adsorbate-atom-force: 0 2 0  0  0
+Adsorbate-atom-charge: 0 0 -0.35
+Adsorbate-atom-charge: 0 1 0.7
+Adsorbate-atom-charge: 0 2 -0.35
+Adsorbate-atom-scaling: 0 0 1
+Adsorbate-atom-scaling: 0 1 1
+Adsorbate-atom-scaling: 0 2 1
+Adsorbate-atom-fixed: 0 0 0 0 0
+Adsorbate-atom-fixed: 0 1 0 0 0
+Adsorbate-atom-fixed: 0 2 0 0 0
+
+Component: 1   Adsorbate 0 molecules of methane
+------------------------------------------------------------------------

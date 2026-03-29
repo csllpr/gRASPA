@@ -1,0 +1,524 @@
+"data_struct.h", line 1331: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      Aaccess_device_random<<<1,1>>>(device_random);
+                           ^
+
+Remark: individual warnings can be suppressed with "--diag_suppress <warning-name>"
+
+"data_struct.h", line 1331: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      Aaccess_device_random<<<1,1>>>(device_random);
+                           ^
+
+Remark: individual warnings can be suppressed with "--diag_suppress <warning-name>"
+
+"data_struct.h", line 1331: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      Aaccess_device_random<<<1,1>>>(device_random);
+                           ^
+
+Remark: individual warnings can be suppressed with "--diag_suppress <warning-name>"
+
+"data_struct.h", line 1331: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      Aaccess_device_random<<<1,1>>>(device_random);
+                           ^
+
+Remark: individual warnings can be suppressed with "--diag_suppress <warning-name>"
+
+"data_struct.h", line 1331: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      Aaccess_device_random<<<1,1>>>(device_random);
+                           ^
+
+Remark: individual warnings can be suppressed with "--diag_suppress <warning-name>"
+
+"mc_utilities.h", line 66: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    AllocateMoreSpace_CopyToTemp<<<1,1>>>(d_a, temp, Copysize, SelectedComponent);
+                                ^
+
+"mc_utilities.h", line 78: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    AllocateMoreSpace_CopyBack<<<1,1>>>(d_a, temp, Copysize, Newspace, SelectedComponent);
+                              ^
+
+"mc_utilities.h", line 304: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    update_translation_position<<<1,Molsize>>>(Sims.d_a, Sims.New, start_position, SelectedComponent);
+                               ^
+
+"mc_utilities.h", line 374: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      Update_insertion_data_Parallel<<<1,SystemComponents.Moleculesize[SelectedComponent]>>>(Sims.d_a, Sims.Old, Sims.New, SelectedTrial, SelectedComponent, UpdateLocation, (int) SystemComponents.Moleculesize[SelectedComponent]);
+                                    ^
+
+"mc_utilities.h", line 378: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      Update_SINGLE_INSERTION_data<<<1,1>>>(Sims.d_a, Sims.New, SelectedComponent);
+                                  ^
+
+"mc_utilities.h", line 403: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    Update_deletion_data_Parallel<<<1,SystemComponents.Moleculesize[SelectedComponent]>>>(Sims.d_a, SelectedComponent, UpdateLocation, (int) SystemComponents.Moleculesize[SelectedComponent], LastLocation);
+                                 ^
+
+"move_struct.h", line 271: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+        StoreNewLocation_Reinsertion<<<1,SystemComponents.Moleculesize[SelectedComponent]>>>(Sims.Old, Sims.New, SystemComponents.tempMolStorage, SelectedTrial, SystemComponents.Moleculesize[SelectedComponent]);
+                                    ^
+
+"move_struct.h", line 371: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      Update_Reinsertion_data<<<1,SystemComponents.Moleculesize[SelectedComponent]>>>(Sims.d_a, SystemComponents.tempMolStorage, SelectedComponent, UpdateLocation); checkCUDAError("error Updating Reinsertion data");
+                             ^
+
+"mc_single_particle.h", line 79: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    get_new_position<<<1, Molsize>>>(Sims, FF, start_position, SelectedComponent, MaxChange, Random.device_random, Random.offset, MoveType);
+                    ^
+
+"mc_utilities.h", line 66: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    AllocateMoreSpace_CopyToTemp<<<1,1>>>(d_a, temp, Copysize, SelectedComponent);
+                                ^
+
+"mc_utilities.h", line 78: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    AllocateMoreSpace_CopyBack<<<1,1>>>(d_a, temp, Copysize, Newspace, SelectedComponent);
+                              ^
+
+"mc_single_particle.h", line 171: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      Calculate_Single_Body_Energy_VDWReal<<<Total_Nblock, Nthread, Nthread * 2 * sizeof(double)>>>(Sims.Box, Sims.d_a, Sims.Old, Sims.New, FF, Sims.Blocksum, SelectedComponent, Atomsize, Molsize, Sims.device_flag, NBlocks, Do_New, Do_Old, SystemComponents.NComponents);
+                                          ^
+
+"mc_utilities.h", line 304: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    update_translation_position<<<1,Molsize>>>(Sims.d_a, Sims.New, start_position, SelectedComponent);
+                               ^
+
+"mc_utilities.h", line 374: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      Update_insertion_data_Parallel<<<1,SystemComponents.Moleculesize[SelectedComponent]>>>(Sims.d_a, Sims.Old, Sims.New, SelectedTrial, SelectedComponent, UpdateLocation, (int) SystemComponents.Moleculesize[SelectedComponent]);
+                                    ^
+
+"mc_utilities.h", line 378: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      Update_SINGLE_INSERTION_data<<<1,1>>>(Sims.d_a, Sims.New, SelectedComponent);
+                                  ^
+
+"mc_utilities.h", line 403: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    Update_deletion_data_Parallel<<<1,SystemComponents.Moleculesize[SelectedComponent]>>>(Sims.d_a, SelectedComponent, UpdateLocation, (int) SystemComponents.Moleculesize[SelectedComponent], LastLocation);
+                                 ^
+
+"move_struct.h", line 271: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+        StoreNewLocation_Reinsertion<<<1,SystemComponents.Moleculesize[SelectedComponent]>>>(Sims.Old, Sims.New, SystemComponents.tempMolStorage, SelectedTrial, SystemComponents.Moleculesize[SelectedComponent]);
+                                    ^
+
+"move_struct.h", line 371: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      Update_Reinsertion_data<<<1,SystemComponents.Moleculesize[SelectedComponent]>>>(Sims.d_a, SystemComponents.tempMolStorage, SelectedComponent, UpdateLocation); checkCUDAError("error Updating Reinsertion data");
+                             ^
+
+"Ewald_Energy_Functions.h", line 403: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    JustStore_StructureFactor_Ewald<<<Nblock, Nthread>>>(Box, numberOfStructureFactors);
+                                   ^
+
+"Ewald_Energy_Functions.h", line 529: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    Initialize_WaveVector_General<<<Nblock,Nthread>>>(Box, Box.kmax, d_a, New, Old, SystemComponents.tempMolStorage, Oldsize, Newsize, SelectedComponent, Location, chainsize, numberOfAtoms, MoveType); checkCUDAErrorEwald("error Initializing Ewald Vectors");
+                                 ^
+
+"Ewald_Energy_Functions.h", line 536: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    Fourier_Ewald_Diff<<<Nblock * 2, Nthread, Nthread * sizeof(double)>>>(Box, SameType, CrossType, Old, alpha_squared, prefactor, Box.kmax, Oldsize, Newsize, Blocksum, UseTempVector, Nblock);
+                      ^
+
+"Ewald_Energy_Functions.h", line 606: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    Initialize_WaveVector_IdentitySwap<<<Nblock,Nthread>>>(Box, Box.kmax, temp, d_a, Old, Oldsize, Newsize, UpdateLocation, numberOfAtoms, OLDComponent, NEWComponent); checkCUDAErrorEwald("Error in Initialization of WaveVector for Identity Swap\n");
+                                      ^
+
+"Ewald_Energy_Functions.h", line 612: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    Fourier_Ewald_Diff<<<Nblock * 2, Nthread, Nthread * sizeof(double)>>>(Box, SameType, CrossType, Old, alpha_squared, prefactor, Box.kmax, Oldsize, Newsize, Blocksum, false, Nblock);
+                      ^
+
+"Ewald_Energy_Functions.h", line 768: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    Initialize_WaveVector_LambdaChange<<<1,1>>>(Box, Box.kmax, d_a, Old, Oldsize, newScale);
+                                      ^
+
+"Ewald_Energy_Functions.h", line 777: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    Fourier_Ewald_Diff_LambdaChange<<<Nblock * 2, Nthread, Nthread * sizeof(double)>>>(Box, SameType, CrossType, Old, alpha_squared, prefactor, Box.kmax, Oldsize, Newsize, Blocksum, UseTempVector, Nblock, newScale.y);
+                                   ^
+
+"Ewald_Energy_Functions.h", line 1344: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      Setup_Wave_Vector_Ewald<<<Nblock, Nthread>>>(Box, eikx, eiky, eikz, d_a, NTotalAtom, SystemComponents.NComponents.x, UseOffSet);
+                             ^
+
+"Ewald_Energy_Functions.h", line 1378: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      TotalFourierEwald<<<Nblock, Nthread>>>(d_a, Box, Sim.Blocksum, eikx, eiky, eikz, Box.tempFrameworkEik, Box.tempEik, NTotalAtom, NAtomPerThread, residueAtoms, NHostGuestthread, SystemComponents.NComponents, Nblock);
+                       ^
+
+"Ewald_Energy_Functions.h", line 1396: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      TotalFourierEwald_CalculateEnergy<<<NCudaBlock, 128, 128*3*sizeof(double)>>>(Box, Box.tempFrameworkEik, Box.tempEik, Sim.Blocksum, Nblock, kpoint_per_thread, NCudaBlock);
+                                       ^
+
+"Ewald_Energy_Functions.h", line 1433: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+        Framework_ComponentZero_Calculate_Intra_Self_Exclusion<<<Exclusion_Nblock, Exclusion_Nthread, Exclusion_Nthread * sizeof(double)>>>(Box, d_a, Sim.Blocksum, IntraInteractions, InteractionPerThread, TotalThreadsNeeded); 
+                                                              ^
+
+"Ewald_Energy_Functions.h", line 1449: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+        Calculate_Intra_Self_Exclusion<<<Exclusion_Nblock, Exclusion_Nthread, Exclusion_Nthread * sizeof(double)>>>(Box, d_a, Sim.Blocksum, i); 
+                                      ^
+
+"mc_widom.h", line 104: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      Calculate_Multiple_Trial_Energy_VDWReal<<<HGGG_Nblock * NTrials, HGGG_Nthread, 2 * HGGG_Nthread * sizeof(double)>>>(Sims.Box, Sims.d_a, Sims.New, Vars.device_FF, Sims.Blocksum, component, Atomsize, Sims.device_flag, threadsNeeded, chainsize, HGGG_Nblock, HG_Nblock, SystemComponents.NComponents, Sims.ExcludeList); checkCUDAError("Error calculating energies (PARTIAL SUM HGGG)");
+                                             ^
+
+"mc_widom.h", line 435: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    get_random_trial_position<<<1,NumberOfTrials>>>(Sims.Box, Sims.d_a, Sims.New, Sims.device_flag, Random, start_position, SelectedComponent, SelectedMolID, MoveType, proposed_scale); checkCUDAError("error getting random trials");
+                             ^
+
+"mc_widom.h", line 555: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    get_random_trial_orientation<<<trialO_Nblock,trialO_Nthread>>>(Sims.Box, Sims.d_a, Sims.Old, Sims.New, Sims.device_flag, Random.device_random, Random.offset, FirstBeadTrial, start_position, SelectedComponent, SelectedMolID, chainsize, MoveType, proposed_scale, SystemComponents.CURRENTCYCLE); checkCUDAError("error getting random trials orientations");
+                                ^
+
+"mc_cbcfc.h", line 43: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    Prepare_LambdaChange<<<1, Molsize>>>(Sims.d_a, Sims.Old, Sims, FF, start_position, SelectedComponent, Sims.device_flag);
+                        ^
+
+"mc_cbcfc.h", line 69: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    Calculate_Single_Body_Energy_VDWReal_LambdaChange<<<Total_Nblock, Nthread, Nthread * 2 * sizeof(double)>>>(Sims.Box, Sims.d_a, Sims.Old, Sims.New, FF, Sims.Blocksum, SelectedComponent, Atomsize, Molsize, Sims.device_flag, NBlocks, Do_New, Do_Old, SystemComponents.NComponents, newScale);
+                                                     ^
+
+"mc_cbcfc.h", line 306: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      update_CBCF_scale<<<1,SystemComponents.Moleculesize[SelectedComponent]>>>(Sims.d_a, start_position, SelectedComponent, InterScale);
+                       ^
+
+"mc_cbcfc.h", line 343: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+          Update_insertion_data_Parallel<<<1,SystemComponents.Moleculesize[SelectedComponent]>>>(Sims.d_a, Sims.Old, Sims.New, SelectedTrial, SelectedComponent, UpdateLocation, (int) SystemComponents.Moleculesize[SelectedComponent]);
+                                        ^
+
+"mc_cbcfc.h", line 357: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      if(!Accepted) Revert_CBCF_Insertion<<<1, SystemComponents.Moleculesize[SelectedComponent]>>>(Sims.d_a, SelectedComponent, start_position, oldScale);
+                                         ^
+
+"mc_cbcfc.h", line 389: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      Update_deletion_data_fractional<<<1,1>>>(Sims.d_a, SelectedComponent, UpdateLocation, (int) SystemComponents.Moleculesize[SelectedComponent], LastLocation);
+                                     ^
+
+"mc_cbcfc.h", line 425: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+          update_CBCF_scale<<<1,SystemComponents.Moleculesize[SelectedComponent]>>>(Sims.d_a, start_position, SelectedComponent, newScale);
+                           ^
+
+"mc_cbcfc.h", line 440: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+        Revert_CBCF_Deletion<<<1,1>>>(Sims.d_a, Sims.New, SelectedComponent, UpdateLocation, (int) SystemComponents.Moleculesize[SelectedComponent], LastLocation);
+                            ^
+
+"mc_cbcfc.h", line 481: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+        update_CBCF_scale<<<1,SystemComponents.Moleculesize[SelectedComponent]>>>(Sims.d_a, start_position, SelectedComponent, newScale);
+                         ^
+
+"mc_swap_moves.h", line 268: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    copy_firstbead_to_new<<<1,1>>>(Sims.New, Sims.d_a, OLDComponent, OLDMolInComponent * SystemComponents.Moleculesize[OLDComponent]);
+                         ^
+
+"mc_swap_moves.h", line 303: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    StoreNewLocation_Reinsertion<<<1,SystemComponents.Moleculesize[NEWComponent]>>>(Sims.Old, Sims.New, SystemComponents.tempMolStorage, SelectedTrial, SystemComponents.Moleculesize[NEWComponent]);
+                                ^
+
+"mc_swap_moves.h", line 398: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+        Update_deletion_data<<<1,1>>>(Sims.d_a, OLDComponent, UpdateLocation, (int) SystemComponents.Moleculesize[OLDComponent], LastLocation);
+                            ^
+
+"mc_swap_moves.h", line 408: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+        Update_IdentitySwap_Insertion_data<<<1,1>>>(Sims.d_a, SystemComponents.tempMolStorage, NEWComponent, UpdateLocation, NEWMolInComponent, SystemComponents.Moleculesize[NEWComponent]); checkCUDAError("error Updating Identity Swap Insertion data");
+                                          ^
+
+"mc_swap_moves.h", line 418: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+        Update_Reinsertion_data<<<1,SystemComponents.Moleculesize[OLDComponent]>>>(Sims.d_a, SystemComponents.tempMolStorage, OLDComponent, UpdateLocation);
+                               ^
+
+"mc_box.h", line 229: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    ScalePositions<<<Nblock, Nthread>>>(Sim.d_a, Sim.Box, Scale, SystemComponents.NComponents.x, ScaleFirstComponentFramework, totMol, FF.noCharges, Sim.device_flag, newV);
+                  ^
+
+"mc_box.h", line 292: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      CopyScaledPositions<<<Nblock, Nthread>>>(Sim.d_a, SystemComponents.NComponents.x, ScaleFirstComponentFramework, totMol);
+                         ^
+
+"mc_box.h", line 305: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      Revert_Boxsize<<<1,1>>>(Sim.Box, Scale, FF.noCharges, OldV);
+                    ^
+
+"mc_box.h", line 388: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+        ScalePositions<<<Nblock, Nthread>>>(Sims[sim].d_a, Sims[sim].Box, ScaleAB[sim], SystemComponents[sim].NComponents.x, ScaleFramework, totMol, FF.noCharges, Sims[sim].device_flag, newV[sim]);
+                      ^
+
+"mc_box.h", line 453: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+        CopyScaledPositions<<<Nblock, Nthread>>>(Sims[sim].d_a, SystemComponents[sim].NComponents.x, ScaleFramework, totMol);
+                           ^
+
+"mc_box.h", line 469: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+        Revert_Boxsize<<<1,1>>>(Sims[sim].Box, ScaleAB[sim], FF.noCharges, OldV[sim]);
+                      ^
+
+"DNN_HostGuest_Energy_Functions.h", line 137: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    Initialize_DNN_Positions<<<Nblock,Nthread>>>(d_a, New, Old, SystemComponents.tempMolStorage, Oldsize, Newsize, SelectedComponent, Location, chainsize, MoveType, SystemComponents.CURRENTCYCLE);
+                            ^
+
+"DNN_HostGuest_Energy_Functions.h", line 166: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    Initialize_DNN_Positions_Reinsertion<<<1,1>>>(temp, d_a, Old, Oldsize, Newsize, Location, SelectedComponent);
+                                        ^
+
+"VDW_Coulomb.cu", line 1649: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    TotalVDWRealCoulomb<<<Nblock, Nthread, 2 * Nthread * sizeof(double)>>>(Sim.Box, Sim.d_a, FF, Sim.Blocksum, Sim.device_flag, InteractionPerThread, UseOffset, BLOCKS, SystemComponents.NComponents, NHostAtom, NGuestAtom, NFrameworkZero_ExtraFramework, ConsiderIntra);
+                       ^
+
+"data_struct.h", line 1331: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      Aaccess_device_random<<<1,1>>>(device_random);
+                           ^
+
+Remark: individual warnings can be suppressed with "--diag_suppress <warning-name>"
+
+Finished data_struct.cpp
+"data_struct.h", line 1331: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      Aaccess_device_random<<<1,1>>>(device_random);
+                           ^
+
+Remark: individual warnings can be suppressed with "--diag_suppress <warning-name>"
+
+"data_struct.h", line 1331: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      Aaccess_device_random<<<1,1>>>(device_random);
+                           ^
+
+Remark: individual warnings can be suppressed with "--diag_suppress <warning-name>"
+
+"mc_utilities.h", line 66: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    AllocateMoreSpace_CopyToTemp<<<1,1>>>(d_a, temp, Copysize, SelectedComponent);
+                                ^
+
+"mc_utilities.h", line 78: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    AllocateMoreSpace_CopyBack<<<1,1>>>(d_a, temp, Copysize, Newspace, SelectedComponent);
+                              ^
+
+"mc_utilities.h", line 304: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    update_translation_position<<<1,Molsize>>>(Sims.d_a, Sims.New, start_position, SelectedComponent);
+                               ^
+
+"mc_utilities.h", line 374: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      Update_insertion_data_Parallel<<<1,SystemComponents.Moleculesize[SelectedComponent]>>>(Sims.d_a, Sims.Old, Sims.New, SelectedTrial, SelectedComponent, UpdateLocation, (int) SystemComponents.Moleculesize[SelectedComponent]);
+                                    ^
+
+"mc_utilities.h", line 378: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      Update_SINGLE_INSERTION_data<<<1,1>>>(Sims.d_a, Sims.New, SelectedComponent);
+                                  ^
+
+"mc_utilities.h", line 403: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    Update_deletion_data_Parallel<<<1,SystemComponents.Moleculesize[SelectedComponent]>>>(Sims.d_a, SelectedComponent, UpdateLocation, (int) SystemComponents.Moleculesize[SelectedComponent], LastLocation);
+                                 ^
+
+"move_struct.h", line 271: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+        StoreNewLocation_Reinsertion<<<1,SystemComponents.Moleculesize[SelectedComponent]>>>(Sims.Old, Sims.New, SystemComponents.tempMolStorage, SelectedTrial, SystemComponents.Moleculesize[SelectedComponent]);
+                                    ^
+
+"move_struct.h", line 371: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      Update_Reinsertion_data<<<1,SystemComponents.Moleculesize[SelectedComponent]>>>(Sims.d_a, SystemComponents.tempMolStorage, SelectedComponent, UpdateLocation); checkCUDAError("error Updating Reinsertion data");
+                             ^
+
+"data_struct.h", line 1331: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      Aaccess_device_random<<<1,1>>>(device_random);
+                           ^
+
+Remark: individual warnings can be suppressed with "--diag_suppress <warning-name>"
+
+"data_struct.h", line 1331: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      Aaccess_device_random<<<1,1>>>(device_random);
+                           ^
+
+Remark: individual warnings can be suppressed with "--diag_suppress <warning-name>"
+
+"Ewald_Energy_Functions.h", line 403: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    JustStore_StructureFactor_Ewald<<<Nblock, Nthread>>>(Box, numberOfStructureFactors);
+                                   ^
+
+"Ewald_Energy_Functions.h", line 529: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    Initialize_WaveVector_General<<<Nblock,Nthread>>>(Box, Box.kmax, d_a, New, Old, SystemComponents.tempMolStorage, Oldsize, Newsize, SelectedComponent, Location, chainsize, numberOfAtoms, MoveType); checkCUDAErrorEwald("error Initializing Ewald Vectors");
+                                 ^
+
+"Ewald_Energy_Functions.h", line 536: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    Fourier_Ewald_Diff<<<Nblock * 2, Nthread, Nthread * sizeof(double)>>>(Box, SameType, CrossType, Old, alpha_squared, prefactor, Box.kmax, Oldsize, Newsize, Blocksum, UseTempVector, Nblock);
+                      ^
+
+"Ewald_Energy_Functions.h", line 606: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    Initialize_WaveVector_IdentitySwap<<<Nblock,Nthread>>>(Box, Box.kmax, temp, d_a, Old, Oldsize, Newsize, UpdateLocation, numberOfAtoms, OLDComponent, NEWComponent); checkCUDAErrorEwald("Error in Initialization of WaveVector for Identity Swap\n");
+                                      ^
+
+"Ewald_Energy_Functions.h", line 612: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    Fourier_Ewald_Diff<<<Nblock * 2, Nthread, Nthread * sizeof(double)>>>(Box, SameType, CrossType, Old, alpha_squared, prefactor, Box.kmax, Oldsize, Newsize, Blocksum, false, Nblock);
+                      ^
+
+"Ewald_Energy_Functions.h", line 768: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    Initialize_WaveVector_LambdaChange<<<1,1>>>(Box, Box.kmax, d_a, Old, Oldsize, newScale);
+                                      ^
+
+"Ewald_Energy_Functions.h", line 777: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    Fourier_Ewald_Diff_LambdaChange<<<Nblock * 2, Nthread, Nthread * sizeof(double)>>>(Box, SameType, CrossType, Old, alpha_squared, prefactor, Box.kmax, Oldsize, Newsize, Blocksum, UseTempVector, Nblock, newScale.y);
+                                   ^
+
+"Ewald_Energy_Functions.h", line 1344: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      Setup_Wave_Vector_Ewald<<<Nblock, Nthread>>>(Box, eikx, eiky, eikz, d_a, NTotalAtom, SystemComponents.NComponents.x, UseOffSet);
+                             ^
+
+"Ewald_Energy_Functions.h", line 1378: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      TotalFourierEwald<<<Nblock, Nthread>>>(d_a, Box, Sim.Blocksum, eikx, eiky, eikz, Box.tempFrameworkEik, Box.tempEik, NTotalAtom, NAtomPerThread, residueAtoms, NHostGuestthread, SystemComponents.NComponents, Nblock);
+                       ^
+
+"Ewald_Energy_Functions.h", line 1396: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      TotalFourierEwald_CalculateEnergy<<<NCudaBlock, 128, 128*3*sizeof(double)>>>(Box, Box.tempFrameworkEik, Box.tempEik, Sim.Blocksum, Nblock, kpoint_per_thread, NCudaBlock);
+                                       ^
+
+"Ewald_Energy_Functions.h", line 1433: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+        Framework_ComponentZero_Calculate_Intra_Self_Exclusion<<<Exclusion_Nblock, Exclusion_Nthread, Exclusion_Nthread * sizeof(double)>>>(Box, d_a, Sim.Blocksum, IntraInteractions, InteractionPerThread, TotalThreadsNeeded); 
+                                                              ^
+
+"Ewald_Energy_Functions.h", line 1449: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+        Calculate_Intra_Self_Exclusion<<<Exclusion_Nblock, Exclusion_Nthread, Exclusion_Nthread * sizeof(double)>>>(Box, d_a, Sim.Blocksum, i); 
+                                      ^
+
+"mc_utilities.h", line 66: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    AllocateMoreSpace_CopyToTemp<<<1,1>>>(d_a, temp, Copysize, SelectedComponent);
+                                ^
+
+"mc_utilities.h", line 78: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    AllocateMoreSpace_CopyBack<<<1,1>>>(d_a, temp, Copysize, Newspace, SelectedComponent);
+                              ^
+
+"mc_utilities.h", line 304: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    update_translation_position<<<1,Molsize>>>(Sims.d_a, Sims.New, start_position, SelectedComponent);
+                               ^
+
+"mc_utilities.h", line 374: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      Update_insertion_data_Parallel<<<1,SystemComponents.Moleculesize[SelectedComponent]>>>(Sims.d_a, Sims.Old, Sims.New, SelectedTrial, SelectedComponent, UpdateLocation, (int) SystemComponents.Moleculesize[SelectedComponent]);
+                                    ^
+
+"mc_utilities.h", line 378: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      Update_SINGLE_INSERTION_data<<<1,1>>>(Sims.d_a, Sims.New, SelectedComponent);
+                                  ^
+
+"mc_utilities.h", line 403: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    Update_deletion_data_Parallel<<<1,SystemComponents.Moleculesize[SelectedComponent]>>>(Sims.d_a, SelectedComponent, UpdateLocation, (int) SystemComponents.Moleculesize[SelectedComponent], LastLocation);
+                                 ^
+
+"move_struct.h", line 271: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+        StoreNewLocation_Reinsertion<<<1,SystemComponents.Moleculesize[SelectedComponent]>>>(Sims.Old, Sims.New, SystemComponents.tempMolStorage, SelectedTrial, SystemComponents.Moleculesize[SelectedComponent]);
+                                    ^
+
+"move_struct.h", line 371: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      Update_Reinsertion_data<<<1,SystemComponents.Moleculesize[SelectedComponent]>>>(Sims.d_a, SystemComponents.tempMolStorage, SelectedComponent, UpdateLocation); checkCUDAError("error Updating Reinsertion data");
+                             ^
+
+"mc_single_particle.h", line 79: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    get_new_position<<<1, Molsize>>>(Sims, FF, start_position, SelectedComponent, MaxChange, Random.device_random, Random.offset, MoveType);
+                    ^
+
+"mc_single_particle.h", line 171: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      Calculate_Single_Body_Energy_VDWReal<<<Total_Nblock, Nthread, Nthread * 2 * sizeof(double)>>>(Sims.Box, Sims.d_a, Sims.Old, Sims.New, FF, Sims.Blocksum, SelectedComponent, Atomsize, Molsize, Sims.device_flag, NBlocks, Do_New, Do_Old, SystemComponents.NComponents);
+                                          ^
+
+"DNN_HostGuest_Energy_Functions.h", line 137: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    Initialize_DNN_Positions<<<Nblock,Nthread>>>(d_a, New, Old, SystemComponents.tempMolStorage, Oldsize, Newsize, SelectedComponent, Location, chainsize, MoveType, SystemComponents.CURRENTCYCLE);
+                            ^
+
+"DNN_HostGuest_Energy_Functions.h", line 166: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    Initialize_DNN_Positions_Reinsertion<<<1,1>>>(temp, d_a, Old, Oldsize, Newsize, Location, SelectedComponent);
+                                        ^
+
+"mc_widom.h", line 104: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      Calculate_Multiple_Trial_Energy_VDWReal<<<HGGG_Nblock * NTrials, HGGG_Nthread, 2 * HGGG_Nthread * sizeof(double)>>>(Sims.Box, Sims.d_a, Sims.New, Vars.device_FF, Sims.Blocksum, component, Atomsize, Sims.device_flag, threadsNeeded, chainsize, HGGG_Nblock, HG_Nblock, SystemComponents.NComponents, Sims.ExcludeList); checkCUDAError("Error calculating energies (PARTIAL SUM HGGG)");
+                                             ^
+
+"mc_widom.h", line 435: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    get_random_trial_position<<<1,NumberOfTrials>>>(Sims.Box, Sims.d_a, Sims.New, Sims.device_flag, Random, start_position, SelectedComponent, SelectedMolID, MoveType, proposed_scale); checkCUDAError("error getting random trials");
+                             ^
+
+"VDW_Coulomb.cu", line 1649: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    TotalVDWRealCoulomb<<<Nblock, Nthread, 2 * Nthread * sizeof(double)>>>(Sim.Box, Sim.d_a, FF, Sim.Blocksum, Sim.device_flag, InteractionPerThread, UseOffset, BLOCKS, SystemComponents.NComponents, NHostAtom, NGuestAtom, NFrameworkZero_ExtraFramework, ConsiderIntra);
+                       ^
+
+"mc_widom.h", line 555: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    get_random_trial_orientation<<<trialO_Nblock,trialO_Nthread>>>(Sims.Box, Sims.d_a, Sims.Old, Sims.New, Sims.device_flag, Random.device_random, Random.offset, FirstBeadTrial, start_position, SelectedComponent, SelectedMolID, chainsize, MoveType, proposed_scale, SystemComponents.CURRENTCYCLE); checkCUDAError("error getting random trials orientations");
+                                ^
+
+"mc_cbcfc.h", line 43: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    Prepare_LambdaChange<<<1, Molsize>>>(Sims.d_a, Sims.Old, Sims, FF, start_position, SelectedComponent, Sims.device_flag);
+                        ^
+
+"mc_cbcfc.h", line 69: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    Calculate_Single_Body_Energy_VDWReal_LambdaChange<<<Total_Nblock, Nthread, Nthread * 2 * sizeof(double)>>>(Sims.Box, Sims.d_a, Sims.Old, Sims.New, FF, Sims.Blocksum, SelectedComponent, Atomsize, Molsize, Sims.device_flag, NBlocks, Do_New, Do_Old, SystemComponents.NComponents, newScale);
+                                                     ^
+
+"mc_cbcfc.h", line 306: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      update_CBCF_scale<<<1,SystemComponents.Moleculesize[SelectedComponent]>>>(Sims.d_a, start_position, SelectedComponent, InterScale);
+                       ^
+
+"mc_cbcfc.h", line 343: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+          Update_insertion_data_Parallel<<<1,SystemComponents.Moleculesize[SelectedComponent]>>>(Sims.d_a, Sims.Old, Sims.New, SelectedTrial, SelectedComponent, UpdateLocation, (int) SystemComponents.Moleculesize[SelectedComponent]);
+                                        ^
+
+"mc_cbcfc.h", line 357: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      if(!Accepted) Revert_CBCF_Insertion<<<1, SystemComponents.Moleculesize[SelectedComponent]>>>(Sims.d_a, SelectedComponent, start_position, oldScale);
+                                         ^
+
+"mc_cbcfc.h", line 389: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      Update_deletion_data_fractional<<<1,1>>>(Sims.d_a, SelectedComponent, UpdateLocation, (int) SystemComponents.Moleculesize[SelectedComponent], LastLocation);
+                                     ^
+
+"mc_cbcfc.h", line 425: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+          update_CBCF_scale<<<1,SystemComponents.Moleculesize[SelectedComponent]>>>(Sims.d_a, start_position, SelectedComponent, newScale);
+                           ^
+
+"mc_cbcfc.h", line 440: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+        Revert_CBCF_Deletion<<<1,1>>>(Sims.d_a, Sims.New, SelectedComponent, UpdateLocation, (int) SystemComponents.Moleculesize[SelectedComponent], LastLocation);
+                            ^
+
+"mc_cbcfc.h", line 481: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+        update_CBCF_scale<<<1,SystemComponents.Moleculesize[SelectedComponent]>>>(Sims.d_a, start_position, SelectedComponent, newScale);
+                         ^
+
+"mc_swap_moves.h", line 268: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    copy_firstbead_to_new<<<1,1>>>(Sims.New, Sims.d_a, OLDComponent, OLDMolInComponent * SystemComponents.Moleculesize[OLDComponent]);
+                         ^
+
+"mc_swap_moves.h", line 303: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    StoreNewLocation_Reinsertion<<<1,SystemComponents.Moleculesize[NEWComponent]>>>(Sims.Old, Sims.New, SystemComponents.tempMolStorage, SelectedTrial, SystemComponents.Moleculesize[NEWComponent]);
+                                ^
+
+"mc_swap_moves.h", line 398: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+        Update_deletion_data<<<1,1>>>(Sims.d_a, OLDComponent, UpdateLocation, (int) SystemComponents.Moleculesize[OLDComponent], LastLocation);
+                            ^
+
+"mc_swap_moves.h", line 408: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+        Update_IdentitySwap_Insertion_data<<<1,1>>>(Sims.d_a, SystemComponents.tempMolStorage, NEWComponent, UpdateLocation, NEWMolInComponent, SystemComponents.Moleculesize[NEWComponent]); checkCUDAError("error Updating Identity Swap Insertion data");
+                                          ^
+
+"mc_swap_moves.h", line 418: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+        Update_Reinsertion_data<<<1,SystemComponents.Moleculesize[OLDComponent]>>>(Sims.d_a, SystemComponents.tempMolStorage, OLDComponent, UpdateLocation);
+                               ^
+
+"mc_box.h", line 229: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+    ScalePositions<<<Nblock, Nthread>>>(Sim.d_a, Sim.Box, Scale, SystemComponents.NComponents.x, ScaleFirstComponentFramework, totMol, FF.noCharges, Sim.device_flag, newV);
+                  ^
+
+"mc_box.h", line 292: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      CopyScaledPositions<<<Nblock, Nthread>>>(Sim.d_a, SystemComponents.NComponents.x, ScaleFirstComponentFramework, totMol);
+                         ^
+
+"mc_box.h", line 305: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+      Revert_Boxsize<<<1,1>>>(Sim.Box, Scale, FF.noCharges, OldV);
+                    ^
+
+"mc_box.h", line 388: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+        ScalePositions<<<Nblock, Nthread>>>(Sims[sim].d_a, Sims[sim].Box, ScaleAB[sim], SystemComponents[sim].NComponents.x, ScaleFramework, totMol, FF.noCharges, Sims[sim].device_flag, newV[sim]);
+                      ^
+
+"mc_box.h", line 453: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+        CopyScaledPositions<<<Nblock, Nthread>>>(Sims[sim].d_a, SystemComponents[sim].NComponents.x, ScaleFramework, totMol);
+                           ^
+
+"mc_box.h", line 469: warning: CUDA C++ compilation is unsupported in nvc++; nvcc is the recommended CUDA compiler [cuda_compile]
+        Revert_Boxsize<<<1,1>>>(Sims[sim].Box, ScaleAB[sim], FF.noCharges, OldV[sim]);
+                      ^
+
+ptxas /tmp/nvaccMi2NYS5ewgnB.ptx, line 6910; info    : Potential out of bound access while accessing symbol 'sdata' of type '.b8' with instruction type '.f64'.
+ptxas /tmp/nvaccMi2NYS5ewgnB.ptx, line 7790; info    : Potential out of bound access while accessing symbol 'sdata' of type '.b8' with instruction type '.f64'.
+ptxas /tmp/nvaccMi2NYS5ewgnB.ptx, line 9884; info    : Potential out of bound access while accessing symbol '__shared__Z33TotalFourierEwald_CalculateEnergy7BoxsizeP7ComplexS1_Pdmmm_sdata' of type '.b8' with instruction type '.f64'.
+ptxas /tmp/nvaccMi2NYS5ewgnB.ptx, line 10334; info    : Potential out of bound access while accessing symbol 'sdata' of type '.b8' with instruction type '.f64'.
+ptxas /tmp/nvaccMi2NYS5ewgnB.ptx, line 10744; info    : Potential out of bound access while accessing symbol 'sdata' of type '.b8' with instruction type '.f64'.
+ptxas /tmp/nvaccMi2NYS5ewgnB.ptx, line 13206; info    : Potential out of bound access while accessing symbol 'sdata' of type '.b8' with instruction type '.f64'.
+ptxas /tmp/nvaccMi2NYS5ewgnB.ptx, line 14010; info    : Potential out of bound access while accessing symbol 'sdata' of type '.b8' with instruction type '.f64'.
+ptxas /tmp/nvaccMi2NYS5ewgnB.ptx, line 14732; info    : Potential out of bound access while accessing symbol 'sdata' of type '.b8' with instruction type '.f64'.
+ptxas /tmp/nvaccMi2NYS5ewgnB.ptx, line 15558; info    : Potential out of bound access while accessing symbol 'sdata' of type '.b8' with instruction type '.f64'.
+ptxas /tmp/nvaccMi2NYS5ewgnB.ptx, line 17271; info    : Potential out of bound access while accessing symbol 'sdata' of type '.b8' with instruction type '.f64'.
+Finished VDW_Coulomb.cu
+Finished read_data.cpp
+Finished axpy.cu
+Finished main.cpp
+Finished Linking

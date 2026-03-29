@@ -538,9 +538,9 @@ double2 GPU_EwaldDifference_General(Simulations& Sim, ForceField& FF, Components
   double SameSum = 0.0; double CrossSum = 0.0;
 
   cudaDeviceSynchronize();
-
-  for(size_t i = 0; i < Nblock; i++){SameSum += Blocksum[i];}
-  for(size_t i = Nblock; i < 2 * Nblock; i++){CrossSum += Blocksum[i];}
+  CopyBlocksumToHost(SystemComponents, Sim, 2 * Nblock);
+  for(size_t i = 0; i < Nblock; i++){SameSum += SystemComponents.host_array[i];}
+  for(size_t i = Nblock; i < 2 * Nblock; i++){CrossSum += SystemComponents.host_array[i];}
   //Zhao's note: when adding fractional molecules, this might not be correct//
   double deltaExclusion = 0.0;
   
@@ -582,6 +582,8 @@ double2 GPU_EwaldDifference_General(Simulations& Sim, ForceField& FF, Components
 double2 GPU_EwaldDifference_IdentitySwap(Boxsize& Box, Atoms*& d_a, Atoms& Old, double3* temp, ForceField& FF, double* Blocksum, Components& SystemComponents, size_t OLDComponent, size_t NEWComponent, size_t UpdateLocation)
 {
   if(FF.noCharges && !SystemComponents.hasPartialCharge[NEWComponent] && !SystemComponents.hasPartialCharge[OLDComponent]) return {0.0, 0.0};
+  if(OLDComponent < SystemComponents.NComponents.y || NEWComponent < SystemComponents.NComponents.y)
+    throw std::runtime_error("Identity swap Ewald is only implemented for adsorbate components");
   double alpha = Box.Alpha; double alpha_squared = alpha * alpha;
   double prefactor = Box.Prefactor * (2.0 * M_PI / Box.Volume);
 
@@ -611,9 +613,9 @@ double2 GPU_EwaldDifference_IdentitySwap(Boxsize& Box, Atoms*& d_a, Atoms& Old, 
   double SameSum = 0.0;  double CrossSum = 0.0;
   //cudaMemcpy(sum, Blocksum, 2 * Nblock * sizeof(double), cudaMemcpyDeviceToHost);
   cudaDeviceSynchronize();
-
-  for(size_t i = 0; i < Nblock; i++){SameSum += Blocksum[i];}
-  for(size_t i = Nblock; i < 2 * Nblock; i++){CrossSum += Blocksum[i];}
+  cudaMemcpy(SystemComponents.host_array, Blocksum, 2 * Nblock * sizeof(double), cudaMemcpyDeviceToHost);
+  for(size_t i = 0; i < Nblock; i++){SameSum += SystemComponents.host_array[i];}
+  for(size_t i = Nblock; i < 2 * Nblock; i++){CrossSum += SystemComponents.host_array[i];}
 
   //Exclusion parts//
   if(SystemComponents.rigid[NEWComponent] && SystemComponents.hasPartialCharge[NEWComponent])
@@ -777,8 +779,9 @@ double2 GPU_EwaldDifference_LambdaChange(Boxsize& Box, Atoms*& d_a, Atoms& Old, 
   double SameSum = 0.0; double CrossSum = 0.0;
   //cudaMemcpy(Host_sum, Blocksum, 2 * Nblock * sizeof(double), cudaMemcpyDeviceToHost);
   cudaDeviceSynchronize();
-  for(size_t i = 0; i < Nblock; i++){SameSum += Blocksum[i];}
-  for(size_t i = Nblock; i < 2 * Nblock; i++){CrossSum += Blocksum[i];}
+  cudaMemcpy(SystemComponents.host_array, Blocksum, 2 * Nblock * sizeof(double), cudaMemcpyDeviceToHost);
+  for(size_t i = 0; i < Nblock; i++){SameSum += SystemComponents.host_array[i];}
+  for(size_t i = Nblock; i < 2 * Nblock; i++){CrossSum += SystemComponents.host_array[i];}
   //printf("Fourier GPU lambda Change: %.5f\n", tot);
   double delta_scale = std::pow(newScale.y,2) - std::pow(oldScale.y,2);
   double deltaExclusion = (SystemComponents.ExclusionIntra[SelectedComponent] + SystemComponents.ExclusionAtom[SelectedComponent]) * delta_scale;
@@ -1290,15 +1293,48 @@ MoveEnergy Ewald_TotalEnergy(Simulations& Sim, Components& SystemComponents, boo
 
   NTotalAtom = NHostAtom + NGuestAtom;
 
-  int2 NHostGuestthread; 
-  //Number of Host threads in a block//
-  NHostGuestthread.x = static_cast<int>(static_cast<double>(NHostAtom) / static_cast<double>(NTotalAtom) * Nthread);
-  NHostGuestthread.y = Nthread - NHostGuestthread.x;
+  int2 NHostGuestthread = {0, 0};
+  const int totalThreads = CheckedSizeToInt(Nthread, "Ewald thread count");
+  if(NHostAtom == 0)
+  {
+    NHostGuestthread.y = totalThreads;
+  }
+  else if(NGuestAtom == 0)
+  {
+    NHostGuestthread.x = totalThreads;
+  }
+  else
+  {
+    // Keep both partitions non-zero whenever both host and guest atoms are present.
+    NHostGuestthread.x = static_cast<int>(static_cast<double>(NHostAtom) / static_cast<double>(NTotalAtom) * totalThreads);
+    if(NHostGuestthread.x < 1) NHostGuestthread.x = 1;
+    if(NHostGuestthread.x >= totalThreads) NHostGuestthread.x = totalThreads - 1;
+    NHostGuestthread.y = totalThreads - NHostGuestthread.x;
+  }
 
   if(NTotalAtom > 0)
   {
-    int2 NAtomPerThread = {NHostAtom > 0 ? NHostAtom / NHostGuestthread.x : 0, NGuestAtom > 0 ? NGuestAtom / NHostGuestthread.y : 0};
-    int2 residueAtoms   = {NHostAtom > 0 ? NHostAtom % NHostGuestthread.x : 0, NGuestAtom > 0 ? NGuestAtom % NHostGuestthread.y : 0};
+    auto atoms_per_thread = [](size_t atomCount, int threadCount, const char* label) -> int
+    {
+      if(atomCount == 0) return 0;
+      if(threadCount <= 0) throw std::runtime_error(std::string(label) + " has zero threads");
+      return CheckedSizeToInt(atomCount / static_cast<size_t>(threadCount), label);
+    };
+    auto residue_atoms = [](size_t atomCount, int threadCount, const char* label) -> int
+    {
+      if(atomCount == 0) return 0;
+      if(threadCount <= 0) throw std::runtime_error(std::string(label) + " has zero threads");
+      return CheckedSizeToInt(atomCount % static_cast<size_t>(threadCount), label);
+    };
+
+    int2 NAtomPerThread = {
+      atoms_per_thread(NHostAtom, NHostGuestthread.x, "Host atoms per thread"),
+      atoms_per_thread(NGuestAtom, NHostGuestthread.y, "Guest atoms per thread")
+    };
+    int2 residueAtoms   = {
+      residue_atoms(NHostAtom, NHostGuestthread.x, "Host residue atoms"),
+      residue_atoms(NGuestAtom, NHostGuestthread.y, "Guest residue atoms")
+    };
 
     //Setup eikx, eiky, and eikz//
     Setup_threadblock(NTotalAtom, Nblock, Nthread);

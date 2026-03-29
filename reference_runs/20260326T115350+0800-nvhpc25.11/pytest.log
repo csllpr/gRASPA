@@ -1,0 +1,31 @@
+============================= test session starts ==============================
+platform linux -- Python 3.11.11, pytest-9.0.2, pluggy-1.5.0
+rootdir: /home/csllpr/source/gRASPA/Examples
+collected 1 item
+
+test_examples.py checking CO2-MFI/output.txt
+
+F
+
+=================================== FAILURES ===================================
+__________________________________ test_file ___________________________________
+
+    def test_file():
+        current_directory = os.getcwd() + '/'
+        assert  check_files(current_directory, 'simulation.input')
+        assert  os.path.exists(f"{current_directory}/Tail-Correction/force_field.def")
+        paths = ['CO2-MFI',
+                 'Methane-TMMC',
+                 'Bae-Mixture',
+                 'NU2000-pX-LinkerRotations',
+                 'Tail-Correction']
+        for path in paths:
+            print(f"checking {path}/output.txt\n")
+>           assert  check_energy_drift(f"{path}/output.txt")
+E           AssertionError: assert False
+E            +  where False = check_energy_drift('CO2-MFI/output.txt')
+
+test_examples.py:101: AssertionError
+=========================== short test summary info ============================
+FAILED test_examples.py::test_file - AssertionError: assert False
+============================== 1 failed in 0.11s ===============================

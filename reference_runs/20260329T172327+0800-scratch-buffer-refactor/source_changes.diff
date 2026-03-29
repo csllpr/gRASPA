@@ -1,0 +1,500 @@
+diff --git a/src_clean/Ewald_Energy_Functions.h b/src_clean/Ewald_Energy_Functions.h
+index dfb3dcc..f727aab 100644
+--- a/src_clean/Ewald_Energy_Functions.h
++++ b/src_clean/Ewald_Energy_Functions.h
+@@ -538,9 +538,9 @@ double2 GPU_EwaldDifference_General(Simulations& Sim, ForceField& FF, Components
+   double SameSum = 0.0; double CrossSum = 0.0;
+ 
+   cudaDeviceSynchronize();
+-
+-  for(size_t i = 0; i < Nblock; i++){SameSum += Blocksum[i];}
+-  for(size_t i = Nblock; i < 2 * Nblock; i++){CrossSum += Blocksum[i];}
++  CopyBlocksumToHost(SystemComponents, Sim, 2 * Nblock);
++  for(size_t i = 0; i < Nblock; i++){SameSum += SystemComponents.host_array[i];}
++  for(size_t i = Nblock; i < 2 * Nblock; i++){CrossSum += SystemComponents.host_array[i];}
+   //Zhao's note: when adding fractional molecules, this might not be correct//
+   double deltaExclusion = 0.0;
+   
+@@ -582,6 +582,8 @@ double2 GPU_EwaldDifference_General(Simulations& Sim, ForceField& FF, Components
+ double2 GPU_EwaldDifference_IdentitySwap(Boxsize& Box, Atoms*& d_a, Atoms& Old, double3* temp, ForceField& FF, double* Blocksum, Components& SystemComponents, size_t OLDComponent, size_t NEWComponent, size_t UpdateLocation)
+ {
+   if(FF.noCharges && !SystemComponents.hasPartialCharge[NEWComponent] && !SystemComponents.hasPartialCharge[OLDComponent]) return {0.0, 0.0};
++  if(OLDComponent < SystemComponents.NComponents.y || NEWComponent < SystemComponents.NComponents.y)
++    throw std::runtime_error("Identity swap Ewald is only implemented for adsorbate components");
+   double alpha = Box.Alpha; double alpha_squared = alpha * alpha;
+   double prefactor = Box.Prefactor * (2.0 * M_PI / Box.Volume);
+ 
+@@ -611,9 +613,9 @@ double2 GPU_EwaldDifference_IdentitySwap(Boxsize& Box, Atoms*& d_a, Atoms& Old,
+   double SameSum = 0.0;  double CrossSum = 0.0;
+   //cudaMemcpy(sum, Blocksum, 2 * Nblock * sizeof(double), cudaMemcpyDeviceToHost);
+   cudaDeviceSynchronize();
+-
+-  for(size_t i = 0; i < Nblock; i++){SameSum += Blocksum[i];}
+-  for(size_t i = Nblock; i < 2 * Nblock; i++){CrossSum += Blocksum[i];}
++  cudaMemcpy(SystemComponents.host_array, Blocksum, 2 * Nblock * sizeof(double), cudaMemcpyDeviceToHost);
++  for(size_t i = 0; i < Nblock; i++){SameSum += SystemComponents.host_array[i];}
++  for(size_t i = Nblock; i < 2 * Nblock; i++){CrossSum += SystemComponents.host_array[i];}
+ 
+   //Exclusion parts//
+   if(SystemComponents.rigid[NEWComponent] && SystemComponents.hasPartialCharge[NEWComponent])
+@@ -777,8 +779,9 @@ double2 GPU_EwaldDifference_LambdaChange(Boxsize& Box, Atoms*& d_a, Atoms& Old,
+   double SameSum = 0.0; double CrossSum = 0.0;
+   //cudaMemcpy(Host_sum, Blocksum, 2 * Nblock * sizeof(double), cudaMemcpyDeviceToHost);
+   cudaDeviceSynchronize();
+-  for(size_t i = 0; i < Nblock; i++){SameSum += Blocksum[i];}
+-  for(size_t i = Nblock; i < 2 * Nblock; i++){CrossSum += Blocksum[i];}
++  cudaMemcpy(SystemComponents.host_array, Blocksum, 2 * Nblock * sizeof(double), cudaMemcpyDeviceToHost);
++  for(size_t i = 0; i < Nblock; i++){SameSum += SystemComponents.host_array[i];}
++  for(size_t i = Nblock; i < 2 * Nblock; i++){CrossSum += SystemComponents.host_array[i];}
+   //printf("Fourier GPU lambda Change: %.5f\n", tot);
+   double delta_scale = std::pow(newScale.y,2) - std::pow(oldScale.y,2);
+   double deltaExclusion = (SystemComponents.ExclusionIntra[SelectedComponent] + SystemComponents.ExclusionAtom[SelectedComponent]) * delta_scale;
+@@ -1290,15 +1293,48 @@ MoveEnergy Ewald_TotalEnergy(Simulations& Sim, Components& SystemComponents, boo
+ 
+   NTotalAtom = NHostAtom + NGuestAtom;
+ 
+-  int2 NHostGuestthread; 
+-  //Number of Host threads in a block//
+-  NHostGuestthread.x = static_cast<int>(static_cast<double>(NHostAtom) / static_cast<double>(NTotalAtom) * Nthread);
+-  NHostGuestthread.y = Nthread - NHostGuestthread.x;
++  int2 NHostGuestthread = {0, 0};
++  const int totalThreads = CheckedSizeToInt(Nthread, "Ewald thread count");
++  if(NHostAtom == 0)
++  {
++    NHostGuestthread.y = totalThreads;
++  }
++  else if(NGuestAtom == 0)
++  {
++    NHostGuestthread.x = totalThreads;
++  }
++  else
++  {
++    // Keep both partitions non-zero whenever both host and guest atoms are present.
++    NHostGuestthread.x = static_cast<int>(static_cast<double>(NHostAtom) / static_cast<double>(NTotalAtom) * totalThreads);
++    if(NHostGuestthread.x < 1) NHostGuestthread.x = 1;
++    if(NHostGuestthread.x >= totalThreads) NHostGuestthread.x = totalThreads - 1;
++    NHostGuestthread.y = totalThreads - NHostGuestthread.x;
++  }
+ 
+   if(NTotalAtom > 0)
+   {
+-    int2 NAtomPerThread = {NHostAtom > 0 ? NHostAtom / NHostGuestthread.x : 0, NGuestAtom > 0 ? NGuestAtom / NHostGuestthread.y : 0};
+-    int2 residueAtoms   = {NHostAtom > 0 ? NHostAtom % NHostGuestthread.x : 0, NGuestAtom > 0 ? NGuestAtom % NHostGuestthread.y : 0};
++    auto atoms_per_thread = [](size_t atomCount, int threadCount, const char* label) -> int
++    {
++      if(atomCount == 0) return 0;
++      if(threadCount <= 0) throw std::runtime_error(std::string(label) + " has zero threads");
++      return CheckedSizeToInt(atomCount / static_cast<size_t>(threadCount), label);
++    };
++    auto residue_atoms = [](size_t atomCount, int threadCount, const char* label) -> int
++    {
++      if(atomCount == 0) return 0;
++      if(threadCount <= 0) throw std::runtime_error(std::string(label) + " has zero threads");
++      return CheckedSizeToInt(atomCount % static_cast<size_t>(threadCount), label);
++    };
++
++    int2 NAtomPerThread = {
++      atoms_per_thread(NHostAtom, NHostGuestthread.x, "Host atoms per thread"),
++      atoms_per_thread(NGuestAtom, NHostGuestthread.y, "Guest atoms per thread")
++    };
++    int2 residueAtoms   = {
++      residue_atoms(NHostAtom, NHostGuestthread.x, "Host residue atoms"),
++      residue_atoms(NGuestAtom, NHostGuestthread.y, "Guest residue atoms")
++    };
+ 
+     //Setup eikx, eiky, and eikz//
+     Setup_threadblock(NTotalAtom, Nblock, Nthread);
+diff --git a/src_clean/VDW_Coulomb.cu b/src_clean/VDW_Coulomb.cu
+index b23c3ae..e416938 100644
+--- a/src_clean/VDW_Coulomb.cu
++++ b/src_clean/VDW_Coulomb.cu
+@@ -1622,17 +1622,24 @@ MoveEnergy Total_VDW_Coulomb_Energy(Simulations& Sim, Components& SystemComponen
+   Nthread = std::max(GG_Nthread, HG_Nthread);
+   if(HH_Nthread > Nthread) Nthread = HH_Nthread;
+ 
++  // Calculate the energy of the new systems.
++  Nblock = HH_Nblock + HG_Nblock + GG_Nblock;
++
+   if(Nblock*2 > Sim.Nblocks)
+   {
+     printf("More blocks for block sum is needed\n");
++    cudaFree(Sim.Blocksum);
+     cudaMalloc(&Sim.Blocksum, 2*Nblock * sizeof(double));
++    Sim.Nblocks = 2 * Nblock;
+   }
+ 
+-  int3 BLOCKS = {HH_Nblock, HG_Nblock, GG_Nblock};
++  int3 BLOCKS = {
++    CheckedSizeToInt(HH_Nblock, "HH block count"),
++    CheckedSizeToInt(HG_Nblock, "HG block count"),
++    CheckedSizeToInt(GG_Nblock, "GG block count")
++  };
+ 
+-  //Calculate the energy of the new systems//
+   //Host-Guest + Guest-Guest//
+-  Nblock = HH_Nblock + HG_Nblock + GG_Nblock;
+   //printf("Atoms: %zu %zu\n", NHostAtom, NGuestAtom);
+   //printf("Interactions: %zu %zu %zu\n", HH_TotalThreads, HG_TotalThreads, GG_TotalThreads);
+   //printf("Nblock %zu, blocks: %zu %zu %zu, threads needed: %zu %zu %zu, Nthread: %zu\n", Nblock, HH_Nblock, HG_Nblock, GG_Nblock, HHThreadsNeeded, HGThreadsNeeded, GGThreadsNeeded, Nthread);
+diff --git a/src_clean/cppflow_LCLin.h b/src_clean/cppflow_LCLin.h
+index 53af7a4..dbf3729 100644
+--- a/src_clean/cppflow_LCLin.h
++++ b/src_clean/cppflow_LCLin.h
+@@ -252,7 +252,7 @@ std::vector<std::vector<double>> CalculatePairDistances_GPU(Simulations& Sim, Co
+   for(size_t i = 0; i < SystemComponents.DNNInteractionList.size(); i++)
+   {
+     Distances[i].resize(SystemComponents.IndexList[i].size()); end += SystemComponents.IndexList[i].size();
+-    cudaMemcpyAsync(Distances[i].data(), &Sim.Blocksum[starts[i]], SystemComponents.IndexList[i].size()*sizeof(double), cudaMemcpyDeviceToHost);
++    cudaMemcpy(Distances[i].data(), &Sim.Blocksum[starts[i]], SystemComponents.IndexList[i].size()*sizeof(double), cudaMemcpyDeviceToHost);
+     
+     //Sort the vector//
+     std::sort(std::execution::unseq, Distances[i].begin(), Distances[i].end());
+diff --git a/src_clean/data_struct.h b/src_clean/data_struct.h
+index ce33d6c..0135a5a 100644
+--- a/src_clean/data_struct.h
++++ b/src_clean/data_struct.h
+@@ -7,6 +7,9 @@
+ #include <cstdlib>
+ #include <random>
+ #include <optional>
++#include <limits>
++#include <cmath>
++#include <stdexcept>
+ 
+ //#include "axpy.h"
+ //###PATCH_LCLIN_DATA_STRUCT_H###//
+@@ -16,6 +19,13 @@
+ #define DEFAULTTHREAD 128
+ double Get_Uniform_Random();
+ 
++inline int CheckedSizeToInt(size_t value, const char* label)
++{
++  if(value > static_cast<size_t>(std::numeric_limits<int>::max()))
++    throw std::runtime_error(std::string(label) + " exceeds 32-bit integer range");
++  return static_cast<int>(value);
++}
++
+ enum MoveTypes {TRANSLATION = 0, ROTATION, SINGLE_INSERTION, SINGLE_DELETION, SPECIAL_ROTATION, INSERTION, DELETION, REINSERTION, CBCF_LAMBDACHANGE, CBCF_INSERTION, CBCF_DELETION, IDENTITY_SWAP, WIDOM};
+ 
+ enum CBMC_Types {CBMC_INSERTION = 0, CBMC_DELETION, REINSERTION_INSERTION, REINSERTION_RETRACE, IDENTITY_SWAP_NEW, IDENTITY_SWAP_OLD};
+@@ -34,6 +44,8 @@ enum INTERACTION_TYPES {HH = 0, HG, GG};
+ 
+ enum RESTART_FILE_TYPES {RASPA_RESTART = 0, LAMMPS_DATA};
+ 
++enum ADAPTIVE_CRITERIA_MODE {ADAPTIVE_CRITERIA_ANY = 0, ADAPTIVE_CRITERIA_ALL};
++
+ //Zhao's note: For the stage of evaluating total energy of the system//
+ enum ENERGYEVALSTAGE {INITIAL = 0, CREATEMOL, FINAL, CREATEMOL_DELTA, DELTA, CREATEMOL_DELTA_CHECK, DELTA_CHECK, DRIFT, GPU_DRIFT, AVERAGE, AVERAGE_ERR, WIDOM_AVG, WIDOM_ERR};
+ 
+@@ -76,6 +88,49 @@ struct Gibbs
+   int2 GibbsXferStats = {0, 0};
+ };
+ 
++struct AdaptiveProductionSettings
++{
++  bool   Enabled = false;
++  int    CriteriaMode = ADAPTIVE_CRITERIA_ANY;
++  size_t MaximumCycles = 0;
++  size_t BatchCycles = 0;
++  size_t MinimumBatches = 5;
++  size_t ConsecutivePasses = 2;
++  size_t MinimumWidomSamples = 1;
++  double RelativeTolerance = 0.0;
++  double RelativeFloor = 1.0e-12;
++  double HenryAbsoluteTolerance = -1.0;
++  double HeatAbsoluteTolerance = -1.0;
++};
++
++struct AdaptiveComponentTarget
++{
++  bool MonitorHenryCoefficient = false;
++  bool MonitorHeatOfAdsorption = false;
++};
++
++struct AdaptiveObservableStatus
++{
++  bool   Enabled = false;
++  bool   Available = false;
++  bool   Passed = false;
++  size_t ValidBatches = 0;
++  double Mean = 0.0;
++  double HalfWidth = std::numeric_limits<double>::infinity();
++  double RelativeHalfWidth = std::numeric_limits<double>::infinity();
++};
++
++struct AdaptiveProductionState
++{
++  bool   Converged = false;
++  size_t CyclesCompleted = 0;
++  size_t CompletedBlocks = 0;
++  size_t ConsecutivePasses = 0;
++  std::string StopReason;
++  std::vector<AdaptiveObservableStatus> HenryStatus;
++  std::vector<AdaptiveObservableStatus> HeatStatus;
++};
++
+ struct LAMBDA
+ {
+   int    newBin;     //Bins range from (-binsize/2, binsize/2), since lambda is from -1 to 1.
+@@ -977,6 +1032,7 @@ struct Components
+ 
+   size_t  Nblock=5;                                 // Number of Blocks for block averages
+   size_t  CURRENTCYCLE=0;
++  size_t  ConfiguredNblock=5;                       // User configured NumberOfBlocks, preserved when adaptive production repurposes Nblock
+   double  DNNPredictTime=0.0; 
+   double  DNNFeatureTime=0.0;
+   double  DNNGPUTime=0.0;
+@@ -1034,6 +1090,8 @@ struct Components
+ 
+   std::vector<double>Compressibility;            //Compressibility for each component, calculated when PR-EOS is used//
+   std::vector<double>AmountOfExcessMolecules;    //For excess loading//
++  std::vector<AdaptiveComponentTarget>AdaptiveTargets;
++  AdaptiveProductionState AdaptiveState;
+   std::vector<std::vector<double2>>ExcessLoading; //Average excess loadings for adsorbates//
+   
+   double HeliumVoidFraction = 0.0;
+@@ -1255,6 +1313,7 @@ struct Simulations //For multiple simulations//
+   Atoms   New;                  // Temporary data storage for New Configuration //
+   Atoms   Temp;                 // Temporary storage (for xfering data and accepting move) //
+   int2*   ExcludeList;          // Atoms to exclude during energy calculations: x: component, y: molecule-ID (may need to add z and make it int3, z: atom-ID)
++  int2    HostExcludeList[10];  // Host mirror for ExcludeList so hot paths do not rely on managed memory //
+   double* Blocksum;             // Block sums for partial reduction //
+   bool*   device_flag;          // flags for overlaps on the device //
+   size_t  start_position;       // Start position for reading data in d_a when proposing a trial position for moves //
+@@ -1262,6 +1321,32 @@ struct Simulations //For multiple simulations//
+   Boxsize Box;                  // Each simulation (system) has its own box //
+ };
+ 
++inline void CopyBlocksumToHost(Components& SystemComponents, const Simulations& Sims, size_t count)
++{
++  if(count == 0) return;
++  cudaMemcpy(SystemComponents.host_array, Sims.Blocksum, count * sizeof(double), cudaMemcpyDeviceToHost);
++}
++
++inline void CopyDeviceFlagsToHost(Components& SystemComponents, const Simulations& Sims, size_t count)
++{
++  if(count == 0) return;
++  cudaMemcpy(SystemComponents.flag, Sims.device_flag, count * sizeof(bool), cudaMemcpyDeviceToHost);
++}
++
++inline void SetExcludeListEntry(Simulations& Sims, size_t index, int2 value)
++{
++  if(index >= 10) throw std::runtime_error("ExcludeList index out of range");
++  Sims.HostExcludeList[index] = value;
++  cudaMemcpy(&Sims.ExcludeList[index], &Sims.HostExcludeList[index], sizeof(int2), cudaMemcpyHostToDevice);
++}
++
++inline void ResetExcludeList(Simulations& Sims)
++{
++  for(size_t i = 0; i < 10; i++)
++    Sims.HostExcludeList[i] = {-1, -1};
++  cudaMemcpy(Sims.ExcludeList, Sims.HostExcludeList, 10 * sizeof(int2), cudaMemcpyHostToDevice);
++}
++
+ 
+ 
+ struct WidomStruct
+@@ -1380,6 +1465,7 @@ struct Variables
+   bool RunTogether = false;
+ 
+   size_t StructureFactor_Multiplier = 2; //Add extra structure factor storage for volume moves//
++  AdaptiveProductionSettings AdaptiveProduction;
+ 
+   size_t Allocate_space_Adsorbate = 0;
+ 
+diff --git a/src_clean/fxn_main.h b/src_clean/fxn_main.h
+index bedd6a5..f9cfe78 100644
+--- a/src_clean/fxn_main.h
++++ b/src_clean/fxn_main.h
+@@ -191,7 +191,8 @@ inline void Prepare_Widom(WidomStruct& Widom, Boxsize Box, Simulations& Sims, Co
+   SystemComponents.flag        = (bool*)malloc(MaxTrialsize * sizeof(bool));
+   // initialize the overlap flags to false (no overlap)
+   for (size_t i = 0; i < MaxTrialsize; ++i) SystemComponents.flag[i] = false;
+-  cudaMallocHost(&Sims.device_flag,          MaxTrialsize * sizeof(bool));
++  cudaMalloc(&Sims.device_flag,              MaxTrialsize * sizeof(bool));
++  cudaMemset(Sims.device_flag, 0, MaxTrialsize * sizeof(bool));
+  
+   size_t vdw_real_size = (MaxResultsize/DEFAULTTHREAD + 1);
+   size_t blocksum_size = vdw_real_size;
+@@ -203,11 +204,12 @@ inline void Prepare_Widom(WidomStruct& Widom, Boxsize Box, Simulations& Sims, Co
+   cudaMalloc(&SystemComponents.tempMolStorage, MaxAdsorbateMolsize * 2 * sizeof(double3));
+   printf("Allocated %zu double3 for reinsertion!\n", MaxAdsorbateMolsize * 2);
+ 
+-  cudaMallocHost(&Sims.Blocksum, blocksum_size*sizeof(double));
++  cudaMalloc(&Sims.Blocksum, blocksum_size*sizeof(double));
++  cudaMemset(Sims.Blocksum, 0, blocksum_size * sizeof(double));
+   SystemComponents.host_array = (double*) malloc(blocksum_size*sizeof(double));
+ 
+-  cudaMallocManaged(&Sims.ExcludeList,        10 * sizeof(int2));
+-  for(size_t i = 0; i < 10; i++) Sims.ExcludeList[i] = {-1, -1}; //Initialize with negative # so that nothing is ignored//
++  cudaMalloc(&Sims.ExcludeList,        10 * sizeof(int2));
++  ResetExcludeList(Sims);
+   //cudaMalloc(&Sims.Blocksum,             (MaxResultsize/DEFAULTTHREAD + 1)*sizeof(double));
+ 
+   fprintf(SystemComponents.OUTPUT, "Allocated Blocksum size: %zu, vdw_real size: %zu, fourier_size: %zu\n", blocksum_size, vdw_real_size, fourier_size);
+diff --git a/src_clean/main.cpp b/src_clean/main.cpp
+index dc8dec0..4e01745 100644
+--- a/src_clean/main.cpp
++++ b/src_clean/main.cpp
+@@ -456,8 +456,16 @@ void EndOfSimulationWrapUp(Variables& Vars)
+ 
+ int main(void) //normal cpp
+ {
+-  Variables V = Initialize();
+-  RunSimulation(V);
+-  EndOfSimulationWrapUp(V);
+-  return 0;  //normal cpp
++  try
++  {
++    Variables V = Initialize();
++    RunSimulation(V);
++    EndOfSimulationWrapUp(V);
++    return 0;  //normal cpp
++  }
++  catch(const std::exception& e)
++  {
++    std::cerr << "ERROR: " << FormatInputErrorMessage(e.what()) << std::endl;
++    return 1;
++  }
+ }
+diff --git a/src_clean/mc_single_particle.h b/src_clean/mc_single_particle.h
+index b86ab3b..ca3c773 100644
+--- a/src_clean/mc_single_particle.h
++++ b/src_clean/mc_single_particle.h
+@@ -169,30 +169,30 @@ inline MoveEnergy SingleBody_Calculation(Variables& Vars, size_t systemId)
+   if(Atomsize != 0)
+   {
+     Calculate_Single_Body_Energy_VDWReal<<<Total_Nblock, Nthread, Nthread * 2 * sizeof(double)>>>(Sims.Box, Sims.d_a, Sims.Old, Sims.New, FF, Sims.Blocksum, SelectedComponent, Atomsize, Molsize, Sims.device_flag, NBlocks, Do_New, Do_Old, SystemComponents.NComponents);
+-
+-    SystemComponents.flag = Sims.device_flag;
+     cudaDeviceSynchronize();
++    CopyDeviceFlagsToHost(SystemComponents, Sims, 1);
+   }
+   MoveEnergy tot; 
+   if(!SystemComponents.flag[0] || !CheckOverlap)
+   {
++    CopyBlocksumToHost(SystemComponents, Sims, 2 * Total_Nblock);
+     //VDW Part and Real Part Coulomb//
+     for(size_t i = 0; i < HH_Nblock; i++) 
+     {
+-      tot.HHVDW += Sims.Blocksum[i];
+-      tot.HHReal+= Sims.Blocksum[i + Total_Nblock];
++      tot.HHVDW += SystemComponents.host_array[i];
++      tot.HHReal+= SystemComponents.host_array[i + Total_Nblock];
+       //if(MoveType == SPECIAL_ROTATION) printf("HH Block %zu, VDW: %.5f, Real: %.5f\n", i, BlockResult[i], BlockResult[i + Total_Nblock]);
+     }
+     for(size_t i = HH_Nblock; i < HH_Nblock + HG_Nblock; i++) 
+     {
+-      tot.HGVDW += Sims.Blocksum[i];
+-      tot.HGReal+= Sims.Blocksum[i + Total_Nblock];
++      tot.HGVDW += SystemComponents.host_array[i];
++      tot.HGReal+= SystemComponents.host_array[i + Total_Nblock];
+       //printf("HG Block %zu, VDW: %.5f, Real: %.5f\n", i, BlockResult[i], BlockResult[i + Total_Nblock]);
+     }
+     for(size_t i = HH_Nblock + HG_Nblock; i < Total_Nblock; i++)
+     {
+-      tot.GGVDW += Sims.Blocksum[i];
+-      tot.GGReal+= Sims.Blocksum[i + Total_Nblock];
++      tot.GGVDW += SystemComponents.host_array[i];
++      tot.GGReal+= SystemComponents.host_array[i + Total_Nblock];
+       //printf("GG Block %zu, VDW: %.5f, Real: %.5f\n", i, BlockResult[i], BlockResult[i + Total_Nblock]);
+     }
+ 
+diff --git a/src_clean/mc_swap_moves.h b/src_clean/mc_swap_moves.h
+index 363ab9c..57b786e 100644
+--- a/src_clean/mc_swap_moves.h
++++ b/src_clean/mc_swap_moves.h
+@@ -235,6 +235,8 @@ static inline MoveEnergy IdentitySwapMove(Variables& Vars, size_t systemId)
+     } 
+     */
+   }
++  if(OLDComponent < SystemComponents.NComponents.y || NEWComponent < SystemComponents.NComponents.y)
++    throw std::runtime_error("Identity swap move only supports adsorbate components");
+ 
+   size_t NEWMolInComponent = SystemComponents.NumberOfMolecule_for_Component[NEWComponent];
+   size_t OLDMolInComponent = (size_t) (Get_Uniform_Random() * SystemComponents.NumberOfMolecule_for_Component[OLDComponent]);
+@@ -265,7 +267,10 @@ static inline MoveEnergy IdentitySwapMove(Variables& Vars, size_t systemId)
+   //Take care of the frist bead location HERE//
+   copy_firstbead_to_new<<<1,1>>>(Sims.New, Sims.d_a, OLDComponent, OLDMolInComponent * SystemComponents.Moleculesize[OLDComponent]);
+   //WRITE THE component and molecule ID THAT IS GOING TO BE IGNORED DURING THE ENERGY CALC//
+-  Sims.ExcludeList[0] = {OLDComponent, OLDMolInComponent};
++  SetExcludeListEntry(Sims, 0, {
++    CheckedSizeToInt(OLDComponent, "Excluded component index"),
++    CheckedSizeToInt(OLDMolInComponent, "Excluded molecule index")
++  });
+   SystemComponents.TempVal.Scale  = SystemComponents.Lambda[NEWComponent].SET_SCALE(1.0); //Zhao's note: not used in reinsertion, just set to 1.0//
+   double& Rosenbluth = InsertionVariables.Rosenbluth;
+   Widom_Move_FirstBead_PARTIAL(Vars, systemId, InsertionVariables);
+@@ -274,7 +279,7 @@ static inline MoveEnergy IdentitySwapMove(Variables& Vars, size_t systemId)
+ 
+   if(!InsertionVariables.SuccessConstruction)
+   {
+-    Sims.ExcludeList[0] = {-1, -1}; //Set to negative so that excludelist is ignored
++    ResetExcludeList(Sims);
+     energy.zero();
+     return energy;
+   }
+@@ -285,7 +290,7 @@ static inline MoveEnergy IdentitySwapMove(Variables& Vars, size_t systemId)
+     if(Rosenbluth <= 1e-150) InsertionVariables.SuccessConstruction = false; //Zhao's note: added this protection bc of weird error when testing GibbsParticleXfer
+     if(!InsertionVariables.SuccessConstruction)
+     {
+-      Sims.ExcludeList[0] = {-1, -1}; //Set to negative so that excludelist is ignored
++      ResetExcludeList(Sims);
+       energy.zero();
+       return energy;
+     }
+@@ -320,7 +325,7 @@ static inline MoveEnergy IdentitySwapMove(Variables& Vars, size_t systemId)
+       if(BlockedPocket(SystemComponents, NEWComponent, new_positions[i], Sims.Box))
+       {
+         SystemComponents.CurrentBlockedPocketMoveType = 7; // Reset to Other
+-        Sims.ExcludeList[0] = {-1, -1}; //Set to negative so that excludelist is ignored
++        ResetExcludeList(Sims);
+         energy.zero();
+         return energy; // Block the move, matching RASPA2 behavior
+       }
+@@ -333,7 +338,7 @@ static inline MoveEnergy IdentitySwapMove(Variables& Vars, size_t systemId)
+   /////////////
+   CBMC_Variables& DeletionVariables = SystemComponents.CBMC_Old[0]; 
+   DeletionVariables.clear();
+-  Sims.ExcludeList[0] = {-1, -1}; //Set to negative so that excludelist is ignored
++  ResetExcludeList(Sims);
+ 
+   SystemComponents.TempVal.component = OLDComponent;
+   SystemComponents.TempVal.molecule  = OLDMolInComponent;
+@@ -412,9 +417,12 @@ static inline MoveEnergy IdentitySwapMove(Variables& Vars, size_t systemId)
+       //So just use what is already in the code//
+       Update_Reinsertion_data<<<1,SystemComponents.Moleculesize[OLDComponent]>>>(Sims.d_a, SystemComponents.tempMolStorage, OLDComponent, UpdateLocation);
+     }
+-    //Zhao's note: BUG!!!!, Think about if OLD/NEW Component belong to different type (framework/adsorbate)//
+     if(!FF.noCharges && ((SystemComponents.hasPartialCharge[NEWComponent]) ||(SystemComponents.hasPartialCharge[OLDComponent])))
++    {
++      if((OLDComponent < SystemComponents.NComponents.y) != (NEWComponent < SystemComponents.NComponents.y))
++        throw std::runtime_error("Identity swap cannot change between framework and adsorbate components");
+       Update_Vector_Ewald(Sims.Box, false, SystemComponents, NEWComponent);
++    }
+     //energy.print();
+     return energy;
+   }
+diff --git a/src_clean/mc_widom.h b/src_clean/mc_widom.h
+index 10b65e5..aea0f80 100644
+--- a/src_clean/mc_widom.h
++++ b/src_clean/mc_widom.h
+@@ -102,15 +102,14 @@ inline void CBMC_PairwiseInteractions(Variables& Vars, size_t systemId, Componen
+   if(Atomsize != 0)
+   {
+     Calculate_Multiple_Trial_Energy_VDWReal<<<HGGG_Nblock * NTrials, HGGG_Nthread, 2 * HGGG_Nthread * sizeof(double)>>>(Sims.Box, Sims.d_a, Sims.New, Vars.device_FF, Sims.Blocksum, component, Atomsize, Sims.device_flag, threadsNeeded, chainsize, HGGG_Nblock, HG_Nblock, SystemComponents.NComponents, Sims.ExcludeList); checkCUDAError("Error calculating energies (PARTIAL SUM HGGG)");
+-    //use Async?
+-    //cudaMemcpy(SystemComponents.flag, Sims.device_flag, NTrials*sizeof(bool), cudaMemcpyDeviceToHost);
+     cudaDeviceSynchronize();
+-    //for (size_t a = 0; a < NTrials; a++) SystemComponents.flag[a] = Sims.device_flag[a];
++    CopyBlocksumToHost(SystemComponents, Sims, 2 * HGGG_Nblock * NTrials);
+   } 
++  CopyDeviceFlagsToHost(SystemComponents, Sims, NTrials);
+   //printf("OldNBlock: %zu, HG_Nblock: %zu, GG_Nblock: %zu, HGGG_Nblock: %zu\n", Nblock, HG_Nblock, GG_Nblock, HGGG_Nblock); 
+   
+   //printf("FIRST BEAD ENERGIES\n");
+-  Host_sum_Widom_HGGG_SEPARATE(SystemComponents, NTrials, Sims.Blocksum, Sims.device_flag, HG_Nblock, HGGG_Nblock, Vars.device_FF.VDWRealBias);
++  Host_sum_Widom_HGGG_SEPARATE(SystemComponents, NTrials, SystemComponents.host_array, SystemComponents.flag, HG_Nblock, HGGG_Nblock, Vars.device_FF.VDWRealBias);
+ }
+ 
+ 

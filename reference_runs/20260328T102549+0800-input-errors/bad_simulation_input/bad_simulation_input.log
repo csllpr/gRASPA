@@ -1,0 +1,5 @@
+/home/csllpr/source/gRASPA/src_clean/nvc_main.x------------------GENERAL SIMULATION SETUP-------------
+Finished Checking Number of Components, There are 1 framework, 1 Adsorbates, 2 total Components
+DONE Reading Model Info from simulation.input file
+ERROR: Input error in file [simulation.input] at line 50: AdaptiveCriteriaMode must be 'Any' or 'All'
+  line: AdaptiveCriteriaMode maybe

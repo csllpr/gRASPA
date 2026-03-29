@@ -1,0 +1,48 @@
+ D Examples/Bae-Mixture/AllData/System_0/Component_0.data
+ D Examples/Bae-Mixture/AllData/System_0/Component_1.data
+ D Examples/Bae-Mixture/AllData/System_0/Component_2.data
+ D Examples/Bae-Mixture/Movies/System_0/result_0.data
+ D Examples/Bae-Mixture/Movies/System_0/result_10000.data
+ D Examples/Bae-Mixture/Movies/System_0/result_15000.data
+ D Examples/Bae-Mixture/Movies/System_0/result_20000.data
+ D Examples/Bae-Mixture/Movies/System_0/result_25000.data
+ D Examples/Bae-Mixture/Movies/System_0/result_30000.data
+ D Examples/Bae-Mixture/Movies/System_0/result_35000.data
+ D Examples/Bae-Mixture/Movies/System_0/result_40000.data
+ D Examples/Bae-Mixture/Movies/System_0/result_45000.data
+ D Examples/Bae-Mixture/Movies/System_0/result_5000.data
+ D Examples/Bae-Mixture/Movies/System_0/result_50000.data
+ D Examples/Bae-Mixture/Movies/System_0/result_55000.data
+ D Examples/Bae-Mixture/Movies/System_0/result_60000.data
+ D Examples/Bae-Mixture/Movies/System_0/result_65000.data
+ D Examples/Bae-Mixture/Movies/System_0/result_70000.data
+ D Examples/Bae-Mixture/Movies/System_0/result_75000.data
+ D Examples/Bae-Mixture/Movies/System_0/result_80000.data
+ D Examples/Bae-Mixture/Movies/System_0/result_85000.data
+ D Examples/Bae-Mixture/Movies/System_0/result_9.data
+ D Examples/Bae-Mixture/Movies/System_0/result_90000.data
+ D Examples/Bae-Mixture/Movies/System_0/result_95000.data
+ D Examples/Bae-Mixture/Movies/System_0/result_99999.data
+ D Examples/Bae-Mixture/Restart/System_0/restartfile
+ D Examples/Bae-Mixture/TMMC/System_0/TMMC_Statistics.data
+ M Examples/Bae-Mixture/output.txt
+ M Examples/CO2-MFI/output.txt
+ D Examples/Methane-TMMC/AllData/System_0/AllAdsorbate.data
+ D Examples/Methane-TMMC/Lambda/System_0/Lambda_Histogram.data
+ D Examples/Methane-TMMC/Movies/System_0/result.data
+ D Examples/Methane-TMMC/Restart/System_0/restartfile
+ D Examples/Methane-TMMC/TMMC/System_0/TMMC_Statistics.data
+ M Examples/Methane-TMMC/output.txt
+ M Examples/NU2000-pX-LinkerRotations/output.txt
+ M Examples/Reference_NIST_SPCE/Box-1/output.txt
+ M Examples/Reference_NIST_SPCE/Box-2/output.txt
+ M Examples/Reference_NIST_SPCE/Box-3/output.txt
+ M Examples/Reference_NIST_SPCE/Box-4/output.txt
+ M Examples/Tail-Correction/output.txt
+ M Examples/run_designated_folders.py
+ M src_clean/NVC_COMPILE
+?? Examples/CO2-MFI/smoke_stderr.txt
+?? Examples/CO2-MFI/smoke_stdout.txt
+?? Examples/__pycache__/
+?? reference_runs/
+?? src_clean/nvc_main.x

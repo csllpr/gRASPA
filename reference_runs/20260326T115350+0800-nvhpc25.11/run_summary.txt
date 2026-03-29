@@ -1,0 +1,11 @@
+Reference run timestamp: 20260326T115350+0800
+Repository: /home/csllpr/source/gRASPA
+Compiler/runtime root: /opt/nvidia/hpc_sdk/Linux_x86_64/25.11
+Binary used: /home/csllpr/source/gRASPA/src_clean/nvc_main.x
+Build command: env NVHPC_ROOT=/opt/nvidia/hpc_sdk/Linux_x86_64/25.11 PATH=/opt/nvidia/hpc_sdk/Linux_x86_64/25.11/compilers/bin:/opt/nvidia/hpc_sdk/Linux_x86_64/25.11/cuda/bin:$PATH LD_LIBRARY_PATH=/opt/nvidia/hpc_sdk/Linux_x86_64/25.11/comm_libs/nvshmem/lib:/opt/nvidia/hpc_sdk/Linux_x86_64/25.11/comm_libs/nccl/lib:/opt/nvidia/hpc_sdk/Linux_x86_64/25.11/math_libs/lib64:/opt/nvidia/hpc_sdk/Linux_x86_64/25.11/compilers/lib:/opt/nvidia/hpc_sdk/Linux_x86_64/25.11/compilers/extras/qd/lib:/opt/nvidia/hpc_sdk/Linux_x86_64/25.11/cuda/lib64 src_clean/NVC_COMPILE
+Example runner command: env NVHPC_ROOT=/opt/nvidia/hpc_sdk/Linux_x86_64/25.11 PATH=/opt/nvidia/hpc_sdk/Linux_x86_64/25.11/compilers/bin:/opt/nvidia/hpc_sdk/Linux_x86_64/25.11/cuda/bin:$PATH LD_LIBRARY_PATH=/opt/nvidia/hpc_sdk/Linux_x86_64/25.11/comm_libs/nvshmem/lib:/opt/nvidia/hpc_sdk/Linux_x86_64/25.11/comm_libs/nccl/lib:/opt/nvidia/hpc_sdk/Linux_x86_64/25.11/math_libs/lib64:/opt/nvidia/hpc_sdk/Linux_x86_64/25.11/compilers/lib:/opt/nvidia/hpc_sdk/Linux_x86_64/25.11/compilers/extras/qd/lib:/opt/nvidia/hpc_sdk/Linux_x86_64/25.11/cuda/lib64 python3 run_designated_folders.py
+Pytest command: env NVHPC_ROOT=/opt/nvidia/hpc_sdk/Linux_x86_64/25.11 PATH=/opt/nvidia/hpc_sdk/Linux_x86_64/25.11/compilers/bin:/opt/nvidia/hpc_sdk/Linux_x86_64/25.11/cuda/bin:$PATH LD_LIBRARY_PATH=/opt/nvidia/hpc_sdk/Linux_x86_64/25.11/comm_libs/nvshmem/lib:/opt/nvidia/hpc_sdk/Linux_x86_64/25.11/comm_libs/nccl/lib:/opt/nvidia/hpc_sdk/Linux_x86_64/25.11/math_libs/lib64:/opt/nvidia/hpc_sdk/Linux_x86_64/25.11/compilers/lib:/opt/nvidia/hpc_sdk/Linux_x86_64/25.11/compilers/extras/qd/lib:/opt/nvidia/hpc_sdk/Linux_x86_64/25.11/cuda/lib64 python3 -m pytest -s
+Pytest result: 1 passed in 0.09s
+Notes:
+- run_designated_folders.py was updated to merge stderr into output.txt so energy-drift and timing diagnostics are preserved for pytest and future reference.
+- src_clean/NVC_COMPILE was updated to use a consistent 25.11 NVHPC toolchain and to run from its own directory.

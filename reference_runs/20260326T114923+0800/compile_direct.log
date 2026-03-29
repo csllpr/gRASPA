@@ -1,0 +1,29 @@
+rm: 无法删除 'nvc_main.x': 没有那个文件或目录
+Catastrophic error: cannot open source file "VDW_Coulomb.cu"
+
+Catastrophic error: cannot open source file "axpy.cu"
+
+Catastrophic error: cannot open source file "data_struct.cpp"
+
+Catastrophic error: cannot open source file "main.cpp"
+
+Catastrophic error: cannot open source file "read_data.cpp"
+
+1 catastrophic error1 catastrophic error1 catastrophic error1 catastrophic error   1 catastrophic error  detected in the compilation of "VDW_Coulomb.cu".detected in the compilation of "main.cpp".detected in the compilation of "axpy.cu".detected in the compilation of "data_struct.cpp".detected in the compilation of "read_data.cpp".
+
+
+
+
+Compilation terminated.
+Compilation terminated.
+Compilation terminated.
+Compilation terminated.
+Compilation terminated.
+/usr/bin/ld: 找不到 main.o: 没有那个文件或目录
+/usr/bin/ld: 找不到 read_data.o: 没有那个文件或目录
+/usr/bin/ld: 找不到 axpy.o: 没有那个文件或目录
+/usr/bin/ld: 找不到 data_struct.o: 没有那个文件或目录
+/usr/bin/ld: 找不到 VDW_Coulomb.o: 没有那个文件或目录
+pgacclnk: child process exit status 1: /usr/bin/ld
+Finished Linking
+rm: 无法删除 '*.o': 没有那个文件或目录

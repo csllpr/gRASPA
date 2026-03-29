@@ -1,0 +1,17 @@
+============================= test session starts ==============================
+platform linux -- Python 3.11.11, pytest-9.0.2, pluggy-1.5.0
+rootdir: /home/csllpr/source/gRASPA
+collected 1 item / 1 error
+
+==================================== ERRORS ====================================
+_ ERROR collecting reference_runs/20260326T115350+0800-nvhpc25.11/artifacts/Examples/test_examples.py _
+import file mismatch:
+imported module 'test_examples' has this __file__ attribute:
+  /home/csllpr/source/gRASPA/Examples/test_examples.py
+which is not the same as the test file we want to collect:
+  /home/csllpr/source/gRASPA/reference_runs/20260326T115350+0800-nvhpc25.11/artifacts/Examples/test_examples.py
+HINT: remove __pycache__ / .pyc files and/or use a unique basename for your test file modules
+=========================== short test summary info ============================
+ERROR reference_runs/20260326T115350+0800-nvhpc25.11/artifacts/Examples/test_examples.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+=============================== 1 error in 0.19s ===============================

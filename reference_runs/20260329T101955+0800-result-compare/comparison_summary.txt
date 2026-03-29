@@ -1,0 +1,11 @@
+raw_equal_all=False
+sanitized_equal_all=False
+CO2-MFI: raw_equal=False sanitized_equal=False current_lines=525 baseline_lines=524
+Methane-TMMC: raw_equal=False sanitized_equal=False current_lines=542 baseline_lines=586
+Bae-Mixture: raw_equal=False sanitized_equal=False current_lines=2412 baseline_lines=2484
+NU2000-pX-LinkerRotations: raw_equal=False sanitized_equal=False current_lines=830 baseline_lines=888
+Tail-Correction: raw_equal=False sanitized_equal=False current_lines=539 baseline_lines=583
+Reference_NIST_SPCE/Box-1: raw_equal=False sanitized_equal=False current_lines=483 baseline_lines=483
+Reference_NIST_SPCE/Box-2: raw_equal=False sanitized_equal=False current_lines=483 baseline_lines=483
+Reference_NIST_SPCE/Box-3: raw_equal=False sanitized_equal=False current_lines=483 baseline_lines=483
+Reference_NIST_SPCE/Box-4: raw_equal=False sanitized_equal=False current_lines=483 baseline_lines=483

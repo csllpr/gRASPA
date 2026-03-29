@@ -235,6 +235,8 @@ static inline MoveEnergy IdentitySwapMove(Variables& Vars, size_t systemId)
     } 
     */
   }
+  if(OLDComponent < SystemComponents.NComponents.y || NEWComponent < SystemComponents.NComponents.y)
+    throw std::runtime_error("Identity swap move only supports adsorbate components");
 
   size_t NEWMolInComponent = SystemComponents.NumberOfMolecule_for_Component[NEWComponent];
   size_t OLDMolInComponent = (size_t) (Get_Uniform_Random() * SystemComponents.NumberOfMolecule_for_Component[OLDComponent]);
@@ -265,7 +267,10 @@ static inline MoveEnergy IdentitySwapMove(Variables& Vars, size_t systemId)
   //Take care of the frist bead location HERE//
   copy_firstbead_to_new<<<1,1>>>(Sims.New, Sims.d_a, OLDComponent, OLDMolInComponent * SystemComponents.Moleculesize[OLDComponent]);
   //WRITE THE component and molecule ID THAT IS GOING TO BE IGNORED DURING THE ENERGY CALC//
-  Sims.ExcludeList[0] = {OLDComponent, OLDMolInComponent};
+  SetExcludeListEntry(Sims, 0, {
+    CheckedSizeToInt(OLDComponent, "Excluded component index"),
+    CheckedSizeToInt(OLDMolInComponent, "Excluded molecule index")
+  });
   SystemComponents.TempVal.Scale  = SystemComponents.Lambda[NEWComponent].SET_SCALE(1.0); //Zhao's note: not used in reinsertion, just set to 1.0//
   double& Rosenbluth = InsertionVariables.Rosenbluth;
   Widom_Move_FirstBead_PARTIAL(Vars, systemId, InsertionVariables);
@@ -274,7 +279,7 @@ static inline MoveEnergy IdentitySwapMove(Variables& Vars, size_t systemId)
 
   if(!InsertionVariables.SuccessConstruction)
   {
-    Sims.ExcludeList[0] = {-1, -1}; //Set to negative so that excludelist is ignored
+    ResetExcludeList(Sims);
     energy.zero();
     return energy;
   }
@@ -285,7 +290,7 @@ static inline MoveEnergy IdentitySwapMove(Variables& Vars, size_t systemId)
     if(Rosenbluth <= 1e-150) InsertionVariables.SuccessConstruction = false; //Zhao's note: added this protection bc of weird error when testing GibbsParticleXfer
     if(!InsertionVariables.SuccessConstruction)
     {
-      Sims.ExcludeList[0] = {-1, -1}; //Set to negative so that excludelist is ignored
+      ResetExcludeList(Sims);
       energy.zero();
       return energy;
     }
@@ -320,7 +325,7 @@ static inline MoveEnergy IdentitySwapMove(Variables& Vars, size_t systemId)
       if(BlockedPocket(SystemComponents, NEWComponent, new_positions[i], Sims.Box))
       {
         SystemComponents.CurrentBlockedPocketMoveType = 7; // Reset to Other
-        Sims.ExcludeList[0] = {-1, -1}; //Set to negative so that excludelist is ignored
+        ResetExcludeList(Sims);
         energy.zero();
         return energy; // Block the move, matching RASPA2 behavior
       }
@@ -333,7 +338,7 @@ static inline MoveEnergy IdentitySwapMove(Variables& Vars, size_t systemId)
   /////////////
   CBMC_Variables& DeletionVariables = SystemComponents.CBMC_Old[0]; 
   DeletionVariables.clear();
-  Sims.ExcludeList[0] = {-1, -1}; //Set to negative so that excludelist is ignored
+  ResetExcludeList(Sims);
 
   SystemComponents.TempVal.component = OLDComponent;
   SystemComponents.TempVal.molecule  = OLDMolInComponent;
@@ -412,9 +417,12 @@ static inline MoveEnergy IdentitySwapMove(Variables& Vars, size_t systemId)
       //So just use what is already in the code//
       Update_Reinsertion_data<<<1,SystemComponents.Moleculesize[OLDComponent]>>>(Sims.d_a, SystemComponents.tempMolStorage, OLDComponent, UpdateLocation);
     }
-    //Zhao's note: BUG!!!!, Think about if OLD/NEW Component belong to different type (framework/adsorbate)//
     if(!FF.noCharges && ((SystemComponents.hasPartialCharge[NEWComponent]) ||(SystemComponents.hasPartialCharge[OLDComponent])))
+    {
+      if((OLDComponent < SystemComponents.NComponents.y) != (NEWComponent < SystemComponents.NComponents.y))
+        throw std::runtime_error("Identity swap cannot change between framework and adsorbate components");
       Update_Vector_Ewald(Sims.Box, false, SystemComponents, NEWComponent);
+    }
     //energy.print();
     return energy;
   }

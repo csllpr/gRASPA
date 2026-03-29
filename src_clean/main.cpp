@@ -456,8 +456,16 @@ void EndOfSimulationWrapUp(Variables& Vars)
 
 int main(void) //normal cpp
 {
-  Variables V = Initialize();
-  RunSimulation(V);
-  EndOfSimulationWrapUp(V);
-  return 0;  //normal cpp
+  try
+  {
+    Variables V = Initialize();
+    RunSimulation(V);
+    EndOfSimulationWrapUp(V);
+    return 0;  //normal cpp
+  }
+  catch(const std::exception& e)
+  {
+    std::cerr << "ERROR: " << FormatInputErrorMessage(e.what()) << std::endl;
+    return 1;
+  }
 }

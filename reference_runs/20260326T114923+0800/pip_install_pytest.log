@@ -1,0 +1,12 @@
+Collecting pytest
+  Downloading pytest-9.0.2-py3-none-any.whl.metadata (7.6 kB)
+Collecting iniconfig>=1.0.1 (from pytest)
+  Downloading iniconfig-2.3.0-py3-none-any.whl.metadata (2.5 kB)
+Requirement already satisfied: packaging>=22 in /home/csllpr/miniconda3/lib/python3.11/site-packages (from pytest) (25.0)
+Requirement already satisfied: pluggy<2,>=1.5 in /home/csllpr/miniconda3/lib/python3.11/site-packages (from pytest) (1.5.0)
+Requirement already satisfied: pygments>=2.7.2 in /home/csllpr/miniconda3/lib/python3.11/site-packages (from pytest) (2.19.1)
+Downloading pytest-9.0.2-py3-none-any.whl (374 kB)
+Downloading iniconfig-2.3.0-py3-none-any.whl (7.5 kB)
+Installing collected packages: iniconfig, pytest
+
+Successfully installed iniconfig-2.3.0 pytest-9.0.2

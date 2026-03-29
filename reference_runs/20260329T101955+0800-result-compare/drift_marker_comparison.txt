@@ -1,0 +1,16 @@
+drift_marker_lines_equal_all=True
+CO2-MFI: equal=True
+  current=
+  baseline=
+Methane-TMMC: equal=True
+  current=
+  baseline=
+Bae-Mixture: equal=True
+  current=
+  baseline=
+NU2000-pX-LinkerRotations: equal=True
+  current=
+  baseline=
+Tail-Correction: equal=True
+  current=
+  baseline=

@@ -1622,17 +1622,24 @@ MoveEnergy Total_VDW_Coulomb_Energy(Simulations& Sim, Components& SystemComponen
   Nthread = std::max(GG_Nthread, HG_Nthread);
   if(HH_Nthread > Nthread) Nthread = HH_Nthread;
 
+  // Calculate the energy of the new systems.
+  Nblock = HH_Nblock + HG_Nblock + GG_Nblock;
+
   if(Nblock*2 > Sim.Nblocks)
   {
     printf("More blocks for block sum is needed\n");
+    cudaFree(Sim.Blocksum);
     cudaMalloc(&Sim.Blocksum, 2*Nblock * sizeof(double));
+    Sim.Nblocks = 2 * Nblock;
   }
 
-  int3 BLOCKS = {HH_Nblock, HG_Nblock, GG_Nblock};
+  int3 BLOCKS = {
+    CheckedSizeToInt(HH_Nblock, "HH block count"),
+    CheckedSizeToInt(HG_Nblock, "HG block count"),
+    CheckedSizeToInt(GG_Nblock, "GG block count")
+  };
 
-  //Calculate the energy of the new systems//
   //Host-Guest + Guest-Guest//
-  Nblock = HH_Nblock + HG_Nblock + GG_Nblock;
   //printf("Atoms: %zu %zu\n", NHostAtom, NGuestAtom);
   //printf("Interactions: %zu %zu %zu\n", HH_TotalThreads, HG_TotalThreads, GG_TotalThreads);
   //printf("Nblock %zu, blocks: %zu %zu %zu, threads needed: %zu %zu %zu, Nthread: %zu\n", Nblock, HH_Nblock, HG_Nblock, GG_Nblock, HHThreadsNeeded, HGThreadsNeeded, GGThreadsNeeded, Nthread);

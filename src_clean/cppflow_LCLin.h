@@ -252,7 +252,7 @@ std::vector<std::vector<double>> CalculatePairDistances_GPU(Simulations& Sim, Co
   for(size_t i = 0; i < SystemComponents.DNNInteractionList.size(); i++)
   {
     Distances[i].resize(SystemComponents.IndexList[i].size()); end += SystemComponents.IndexList[i].size();
-    cudaMemcpyAsync(Distances[i].data(), &Sim.Blocksum[starts[i]], SystemComponents.IndexList[i].size()*sizeof(double), cudaMemcpyDeviceToHost);
+    cudaMemcpy(Distances[i].data(), &Sim.Blocksum[starts[i]], SystemComponents.IndexList[i].size()*sizeof(double), cudaMemcpyDeviceToHost);
     
     //Sort the vector//
     std::sort(std::execution::unseq, Distances[i].begin(), Distances[i].end());

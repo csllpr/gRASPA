@@ -6,6 +6,8 @@
 
 void Check_Inputs_In_read_data_cpp(std::string& exepath);
 
+std::string FormatInputErrorMessage(const std::string& message);
+
 void read_number_of_sims_from_input(size_t *NumSims, bool *SingleSim);
 
 void read_FFParams_from_input(Input_Container& Input);

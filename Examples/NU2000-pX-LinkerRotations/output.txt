@@ -1,52 +1,15 @@
+/home/csllpr/source/gRASPA/src_clean/nvc_main.x------------------GENERAL SIMULATION SETUP-------------
 Finished Checking Number of Components, There are 2 framework, 1 Adsorbates, 3 total Components
 DONE Reading Model Info from simulation.input file
 Setting Maximum Number of Steps for a Cycle, Max Step = 1
 -------------------------------------------------------
 device_random[0] = 2.30000 4.50000 6.70000
-==========================================
-====== Preparing Simulation box 0 ======
-==========================================
-==================================================
-ACCUMULATED Probabilities:
-Translation Probability:      0.00000
-Rotation Probability:         0.00000
-Special Rotation Probability: 1.00000
-Widom Probability:            1.00000
-Reinsertion Probability:      1.00000
-Identity Swap Probability:    1.00000
-CBCF Swap Probability:        1.00000
-Swap Probability:             1.00000
-Volume Probability:           1.00000
-Gibbs Swap Probability:       1.00000
-Gibbs Volume Probability:     1.00000
-Sum of Probabilities:         1.00000
-==================================================
-Parsing [2] Component
--------------- READING AdsorbateComponent 0 (p-xylene) --------------
-==================================================
-ACCUMULATED Probabilities:
-Translation Probability:      0.24390
-Rotation Probability:         0.48780
-Special Rotation Probability: 0.48780
-Widom Probability:            0.48780
-Reinsertion Probability:      0.73171
-Identity Swap Probability:    0.73171
-CBCF Swap Probability:        0.73171
-Swap Probability:             0.97561
-Volume Probability:           0.97561
-Gibbs Swap Probability:       0.97561
-Gibbs Volume Probability:     1.00000
-Sum of Probabilities:         1.00000
-==================================================
--------------- END OF READING Component 0 (p-xylene) --------------
 ================FUGACITY COEFFICIENT CALCULATION================
 Checking: Current Fugacity Coeff for 2 component: 1.00000
 Every Adsorbate Component has fugacity coefficient assigned, skip EOS calculation!
-Rosen capacity: 10
 ----------------- MEMORY ALLOCAION STATUS -----------------
 System allocate_sizes are: 448, 1408
 Component allocate_sizes are: 448, 1408
-Allocated 44 double3 for reinsertion!
 Allocated Blocksum size: 34651, vdw_real size: 34651, fourier_size: 0
 ------------------------------------------------------------
 ------------------- SIMULATION BOX PARAMETERS -----------------
@@ -75,8 +38,8 @@ Component: 2, SelfAtomE: 0.00000 (0.00000 kJ/mol)
 Component: 0, Intra-Molecular ExclusionE: -32892160.48297 (-39560200.18912 kJ/mol)
 Component: 1, Intra-Molecular ExclusionE: -243671.40556 (-293069.51695 kJ/mol)
 Component: 2, Intra-Molecular ExclusionE: 0.00000 (0.00000 kJ/mol)
-HostEwald took 0.05797 sec
-Ewald Summation (total energy) on the CPU took 0.05797 secs
+HostEwald took 0.01362 sec
+Ewald Summation (total energy) on the CPU took 0.01363 secs
 Component 0, Intra Exclusion Energy: 32892160.48297 (39560200.18912 kJ/mol)
 Component 0, Atom Self Exclusion Energy: 7123268.40575 (8567327.89803 kJ/mol)
 DEBUG: comp: 0, IntraE: 32892160.48297, SelfE: 7123268.40575
@@ -122,13 +85,9 @@ Framework Structure Factor 6, real: 0.00000 imag: -0.00000
 Framework Structure Factor 7, real: -0.00000 imag: 0.00000
 Framework Structure Factor 8, real: 0.00000 imag: -0.00000
 Framework Structure Factor 9, real: -0.00000 imag: 0.00000
-VDW + Real on the GPU took 0.00063 secs
-Ewald Summation (total energy) on the GPU took 0.00281 secs
+VDW + Real on the GPU took 0.00058 secs
+Ewald Summation (total energy) on the GPU took 0.00107 secs
 Total GPU Energy: 
-HHVDW: 5523439918.42259, HHReal: -6257646.54087, HGVDW: 0.00000, HGReal: 0.00000, GGVDW: 0.00000, GGReal: 0.00000, HHEwaldE: -0.00000,
- HGEwaldE: 0.00000,
- GGEwaldE: 0.00000, TailE: 0.00000, DNN_E: 0.00000
-Stored HGVDW: 0.00000, Stored HGReal: 0.00000, Stored HGEwaldE: 0.00000
 ====================== DONE CALCULATING INITIAL STAGE ENERGY ======================
 Component 2, Need to create 0 full molecule
 ======================== CALCULATING CREATE_MOLECULE STAGE ENERGY ========================
@@ -151,8 +110,8 @@ Component: 2, SelfAtomE: 0.00000 (0.00000 kJ/mol)
 Component: 0, Intra-Molecular ExclusionE: -32892160.48297 (-39560200.18912 kJ/mol)
 Component: 1, Intra-Molecular ExclusionE: -243671.40556 (-293069.51695 kJ/mol)
 Component: 2, Intra-Molecular ExclusionE: 0.00000 (0.00000 kJ/mol)
-HostEwald took 0.05841 sec
-Ewald Summation (total energy) on the CPU took 0.05841 secs
+HostEwald took 0.01254 sec
+Ewald Summation (total energy) on the CPU took 0.01254 secs
  ****** CHECKING StructureFactors (SF) Stored on CPU vs. GPU ****** 
 CPU SF: 2280, GPU SF: 2280
 StructureFactor 0, CPU: 0.00000 0.00000, GPU: 0.00000 0.00000
@@ -176,17 +135,10 @@ Framework Structure Factor 6, real: 0.00000 imag: -0.00000
 Framework Structure Factor 7, real: -0.00000 imag: 0.00000
 Framework Structure Factor 8, real: 0.00000 imag: -0.00000
 Framework Structure Factor 9, real: -0.00000 imag: 0.00000
-VDW + Real on the GPU took 0.00059 secs
-Ewald Summation (total energy) on the GPU took 0.00196 secs
+VDW + Real on the GPU took 0.00050 secs
+Ewald Summation (total energy) on the GPU took 0.00099 secs
 Total GPU Energy: 
-HHVDW: 5523439918.42259, HHReal: -6257646.54087, HGVDW: 0.00000, HGReal: 0.00000, GGVDW: 0.00000, GGReal: 0.00000, HHEwaldE: -0.00000,
- HGEwaldE: 0.00000,
- GGEwaldE: 0.00000, TailE: 0.00000, DNN_E: 0.00000
-Stored HGVDW: 0.00000, Stored HGReal: 0.00000, Stored HGEwaldE: 0.00000
 ====================== DONE CALCULATING CREATE_MOLECULE STAGE ENERGY ======================
-============================================
-== END OF PREPARATION, SIMULATION STARTS! ==
-============================================
 Running Simulation Boxes in SERIAL, currently [0] box; pres: 3800.00000 [Pa], temp: 298.00000 [K]
 ==================================
 == RUNNING INITIALIZATION PHASE ==
@@ -203,21 +155,71 @@ Running Simulation Boxes in SERIAL, currently [0] box; pres: 3800.00000 [Pa], te
 ==================================
 CBMC Uses 10 trial positions and 10 trial orientations
 EQUILIBRATION Cycle: 0, 0 Adsorbate Molecules, Total Energy: 5517182271.87698  ||  Component 0 [Al-Bicyclo-AddedH-P1-fix-PBC.cif], 1 Molecules  ||  Component 1 [BiCyclo-Linker], 64 Molecules  ||  Component 2 [p-xylene], 0 Molecules  ||  
+==========================================
+====== Preparing Simulation box 0 ======
+==========================================
+==================================================
+ACCUMULATED Probabilities:
+Translation Probability:      0.00000
+Rotation Probability:         0.00000
+Special Rotation Probability: 1.00000
+Widom Probability:            1.00000
+Reinsertion Probability:      1.00000
+Identity Swap Probability:    1.00000
+CBCF Swap Probability:        1.00000
+Swap Probability:             1.00000
+Volume Probability:           1.00000
+Gibbs Swap Probability:       1.00000
+Gibbs Volume Probability:     1.00000
+Sum of Probabilities:         1.00000
+==================================================
+Parsing [2] Component
+-------------- READING AdsorbateComponent 0 (p-xylene) --------------
+==================================================
+ACCUMULATED Probabilities:
+Translation Probability:      0.24390
+Rotation Probability:         0.48780
+Special Rotation Probability: 0.48780
+Widom Probability:            0.48780
+Reinsertion Probability:      0.73171
+Identity Swap Probability:    0.73171
+CBCF Swap Probability:        0.73171
+Swap Probability:             0.97561
+Volume Probability:           0.97561
+Gibbs Swap Probability:       0.97561
+Gibbs Volume Probability:     1.00000
+Sum of Probabilities:         1.00000
+==================================================
+-------------- END OF READING Component 0 (p-xylene) --------------
+Rosen capacity: 10
+Allocated 44 double3 for reinsertion!
+HHVDW: 5523439918.42259, HHReal: -6257646.54087, HGVDW: 0.00000, HGReal: 0.00000, GGVDW: 0.00000, GGReal: 0.00000, HHEwaldE: -0.00000,
+ HGEwaldE: 0.00000,
+ GGEwaldE: 0.00000, TailE: 0.00000, DNN_E: 0.00000
+Stored HGVDW: 0.00000, Stored HGReal: 0.00000, Stored HGEwaldE: 0.00000
+HHVDW: 5523439918.42259, HHReal: -6257646.54087, HGVDW: 0.00000, HGReal: 0.00000, GGVDW: 0.00000, GGReal: 0.00000, HHEwaldE: -0.00000,
+ HGEwaldE: 0.00000,
+ GGEwaldE: 0.00000, TailE: 0.00000, DNN_E: 0.00000
+Stored HGVDW: 0.00000, Stored HGReal: 0.00000, Stored HGEwaldE: 0.00000
+============================================
+== END OF PREPARATION, SIMULATION STARTS! ==
+============================================
+Cannot Open Restart/System_0//restartfile or Restart/System_0//previous_restartfile
 EQUILIBRATION Cycle: 5000, 1 Adsorbate Molecules, Total Energy: 5517184328.76324  ||  Component 0 [Al-Bicyclo-AddedH-P1-fix-PBC.cif], 1 Molecules  ||  Component 1 [BiCyclo-Linker], 64 Molecules  ||  Component 2 [p-xylene], 1 Molecules  ||  
 EQUILIBRATION Cycle: 10000, 1 Adsorbate Molecules, Total Energy: 5517184707.60395  ||  Component 0 [Al-Bicyclo-AddedH-P1-fix-PBC.cif], 1 Molecules  ||  Component 1 [BiCyclo-Linker], 64 Molecules  ||  Component 2 [p-xylene], 1 Molecules  ||  
-EQUILIBRATION Cycle: 15000, 2 Adsorbate Molecules, Total Energy: 5517176076.37583  ||  Component 0 [Al-Bicyclo-AddedH-P1-fix-PBC.cif], 1 Molecules  ||  Component 1 [BiCyclo-Linker], 64 Molecules  ||  Component 2 [p-xylene], 2 Molecules  ||  
-EQUILIBRATION Cycle: 20000, 2 Adsorbate Molecules, Total Energy: 5517174580.90517  ||  Component 0 [Al-Bicyclo-AddedH-P1-fix-PBC.cif], 1 Molecules  ||  Component 1 [BiCyclo-Linker], 64 Molecules  ||  Component 2 [p-xylene], 2 Molecules  ||  
-EQUILIBRATION Cycle: 25000, 3 Adsorbate Molecules, Total Energy: 5517167634.75367  ||  Component 0 [Al-Bicyclo-AddedH-P1-fix-PBC.cif], 1 Molecules  ||  Component 1 [BiCyclo-Linker], 64 Molecules  ||  Component 2 [p-xylene], 3 Molecules  ||  
-EQUILIBRATION Cycle: 30000, 4 Adsorbate Molecules, Total Energy: 5517158435.33801  ||  Component 0 [Al-Bicyclo-AddedH-P1-fix-PBC.cif], 1 Molecules  ||  Component 1 [BiCyclo-Linker], 64 Molecules  ||  Component 2 [p-xylene], 4 Molecules  ||  
-EQUILIBRATION Cycle: 35000, 4 Adsorbate Molecules, Total Energy: 5517156465.91350  ||  Component 0 [Al-Bicyclo-AddedH-P1-fix-PBC.cif], 1 Molecules  ||  Component 1 [BiCyclo-Linker], 64 Molecules  ||  Component 2 [p-xylene], 4 Molecules  ||  
-EQUILIBRATION Cycle: 40000, 7 Adsorbate Molecules, Total Energy: 5517139800.45529  ||  Component 0 [Al-Bicyclo-AddedH-P1-fix-PBC.cif], 1 Molecules  ||  Component 1 [BiCyclo-Linker], 64 Molecules  ||  Component 2 [p-xylene], 7 Molecules  ||  
-EQUILIBRATION Cycle: 45000, 9 Adsorbate Molecules, Total Energy: 5517124555.81586  ||  Component 0 [Al-Bicyclo-AddedH-P1-fix-PBC.cif], 1 Molecules  ||  Component 1 [BiCyclo-Linker], 64 Molecules  ||  Component 2 [p-xylene], 9 Molecules  ||  
+EQUILIBRATION Cycle: 15000, 2 Adsorbate Molecules, Total Energy: 5517181097.50998  ||  Component 0 [Al-Bicyclo-AddedH-P1-fix-PBC.cif], 1 Molecules  ||  Component 1 [BiCyclo-Linker], 64 Molecules  ||  Component 2 [p-xylene], 2 Molecules  ||  
+EQUILIBRATION Cycle: 20000, 3 Adsorbate Molecules, Total Energy: 5517169565.91488  ||  Component 0 [Al-Bicyclo-AddedH-P1-fix-PBC.cif], 1 Molecules  ||  Component 1 [BiCyclo-Linker], 64 Molecules  ||  Component 2 [p-xylene], 3 Molecules  ||  
+EQUILIBRATION Cycle: 25000, 3 Adsorbate Molecules, Total Energy: 5517165184.76056  ||  Component 0 [Al-Bicyclo-AddedH-P1-fix-PBC.cif], 1 Molecules  ||  Component 1 [BiCyclo-Linker], 64 Molecules  ||  Component 2 [p-xylene], 3 Molecules  ||  
+EQUILIBRATION Cycle: 30000, 3 Adsorbate Molecules, Total Energy: 5517168789.38297  ||  Component 0 [Al-Bicyclo-AddedH-P1-fix-PBC.cif], 1 Molecules  ||  Component 1 [BiCyclo-Linker], 64 Molecules  ||  Component 2 [p-xylene], 3 Molecules  ||  
+EQUILIBRATION Cycle: 35000, 3 Adsorbate Molecules, Total Energy: 5517169725.92501  ||  Component 0 [Al-Bicyclo-AddedH-P1-fix-PBC.cif], 1 Molecules  ||  Component 1 [BiCyclo-Linker], 64 Molecules  ||  Component 2 [p-xylene], 3 Molecules  ||  
+EQUILIBRATION Cycle: 40000, 4 Adsorbate Molecules, Total Energy: 5517158346.07348  ||  Component 0 [Al-Bicyclo-AddedH-P1-fix-PBC.cif], 1 Molecules  ||  Component 1 [BiCyclo-Linker], 64 Molecules  ||  Component 2 [p-xylene], 4 Molecules  ||  
+EQUILIBRATION Cycle: 45000, 5 Adsorbate Molecules, Total Energy: 5517151332.98590  ||  Component 0 [Al-Bicyclo-AddedH-P1-fix-PBC.cif], 1 Molecules  ||  Component 1 [BiCyclo-Linker], 64 Molecules  ||  Component 2 [p-xylene], 5 Molecules  ||  
 Sampled 0 WangLandau, Adjusted WL 0 times
 ======================== MOVE STATISTICS FOR COMPONENT [1] (BiCyclo-Linker) ========================
 =====================SPECIAL ROTATION MOVES========================
-Special Rotation Performed: 228
-Special Rotation Accepted:  122
-Max Special Rotation: 0.1463251914, 0.1463251914, 0.1463251914
+Special Rotation Performed: 238
+Special Rotation Accepted:  121
+Max Special Rotation: 0.1617278432, 0.1617278432, 0.1617278432
 ===========================================================
 =====================SWAP MOVES=====================
 Insertion Performed:   0
@@ -232,21 +234,21 @@ Reinsertion Accepted:  0
 ================================================================================================
 ======================== MOVE STATISTICS FOR COMPONENT [2] (p-xylene) ========================
 =====================TRANSLATION MOVES=====================
-Translation Performed: 5463
-Translation Accepted: 1440
-Max Translation: 0.1431115901, 0.1390884772, 0.1783493324
+Translation Performed: 5488
+Translation Accepted: 1443
+Max Translation: 0.1294819148, 0.1258419556, 0.1613636817
 ===========================================================
 =====================ROTATION MOVES========================
-Rotation Performed: 5528
-Rotation Accepted: 1742
-Max Rotation: 0.0468118228, 0.0468118228, 0.0468118228
+Rotation Performed: 5516
+Rotation Accepted: 1676
+Max Rotation: 0.0423535540, 0.0423535540, 0.0423535540
 ===========================================================
 =====================SWAP MOVES=====================
-Insertion Performed:   3080
-Insertion Accepted:    9
-Deletion Performed:    2728
+Insertion Performed:   3030
+Insertion Accepted:    6
+Deletion Performed:    2747
 Deletion Accepted:     0
-Reinsertion Performed: 5543
+Reinsertion Performed: 5551
 Reinsertion Accepted:  0
 ====================================================
 =====================IDENTITY SWAP MOVES=====================
@@ -267,81 +269,91 @@ Running Simulation Boxes in SERIAL, currently [0] box; pres: 3800.00000 [Pa], te
 ==  RUNNING PRODUCTION PHASE   ==
 ==================================
 CBMC Uses 10 trial positions and 10 trial orientations
-PRODUCTION Cycle: 0, 9 Adsorbate Molecules, Total Energy: 5517119272.99063  ||  Component 0 [Al-Bicyclo-AddedH-P1-fix-PBC.cif], 1 Molecules  ||  Component 1 [BiCyclo-Linker], 64 Molecules  ||  Component 2 [p-xylene], 9 Molecules  ||  
-Printing: Component: 0 [ Al-Bicyclo-AddedH-P1-fix-PBC.cif ], NumMol: 1, Molsize: 448
-Printing: Component: 1 [ BiCyclo-Linker ], NumMol: 64, Molsize: 22
-Printing: Component: 2 [ p-xylene ], NumMol: 9, Molsize: 12
+PRODUCTION Cycle: 0, 6 Adsorbate Molecules, Total Energy: 5517146441.02140  ||  Component 0 [Al-Bicyclo-AddedH-P1-fix-PBC.cif], 1 Molecules  ||  Component 1 [BiCyclo-Linker], 64 Molecules  ||  Component 2 [p-xylene], 6 Molecules  ||  
+Printing: Component: 0 [ Al-Bicyclo-AddedH-P1-fix-PBC.cif ], NumMol: 1, Molsize: 448, Total atoms: 448, Printable atoms: 448
+Printing: Component: 1 [ BiCyclo-Linker ], NumMol: 64, Molsize: 22, Total atoms: 1408, Printable atoms: 1408
+Printing: Component: 2 [ p-xylene ], NumMol: 6, Molsize: 12, Total atoms: 72, Printable atoms: 72
+Total atoms: 1928, Printable atoms: 1928
 Component 0, Molsize: 448
 Component 1, Molsize: 22
 Component 2, Molsize: 12
-PRODUCTION Cycle: 5000, 9 Adsorbate Molecules, Total Energy: 5517116742.62806  ||  Component 0 [Al-Bicyclo-AddedH-P1-fix-PBC.cif], 1 Molecules  ||  Component 1 [BiCyclo-Linker], 64 Molecules  ||  Component 2 [p-xylene], 9 Molecules  ||  
-Printing: Component: 0 [ Al-Bicyclo-AddedH-P1-fix-PBC.cif ], NumMol: 1, Molsize: 448
-Printing: Component: 1 [ BiCyclo-Linker ], NumMol: 64, Molsize: 22
-Printing: Component: 2 [ p-xylene ], NumMol: 9, Molsize: 12
+PRODUCTION Cycle: 5000, 7 Adsorbate Molecules, Total Energy: 5517134743.36355  ||  Component 0 [Al-Bicyclo-AddedH-P1-fix-PBC.cif], 1 Molecules  ||  Component 1 [BiCyclo-Linker], 64 Molecules  ||  Component 2 [p-xylene], 7 Molecules  ||  
+Printing: Component: 0 [ Al-Bicyclo-AddedH-P1-fix-PBC.cif ], NumMol: 1, Molsize: 448, Total atoms: 448, Printable atoms: 448
+Printing: Component: 1 [ BiCyclo-Linker ], NumMol: 64, Molsize: 22, Total atoms: 1408, Printable atoms: 1408
+Printing: Component: 2 [ p-xylene ], NumMol: 7, Molsize: 12, Total atoms: 84, Printable atoms: 84
+Total atoms: 1940, Printable atoms: 1940
 Component 0, Molsize: 448
 Component 1, Molsize: 22
 Component 2, Molsize: 12
-PRODUCTION Cycle: 10000, 9 Adsorbate Molecules, Total Energy: 5517117641.93879  ||  Component 0 [Al-Bicyclo-AddedH-P1-fix-PBC.cif], 1 Molecules  ||  Component 1 [BiCyclo-Linker], 64 Molecules  ||  Component 2 [p-xylene], 9 Molecules  ||  
-Printing: Component: 0 [ Al-Bicyclo-AddedH-P1-fix-PBC.cif ], NumMol: 1, Molsize: 448
-Printing: Component: 1 [ BiCyclo-Linker ], NumMol: 64, Molsize: 22
-Printing: Component: 2 [ p-xylene ], NumMol: 9, Molsize: 12
+PRODUCTION Cycle: 10000, 8 Adsorbate Molecules, Total Energy: 5517130167.34932  ||  Component 0 [Al-Bicyclo-AddedH-P1-fix-PBC.cif], 1 Molecules  ||  Component 1 [BiCyclo-Linker], 64 Molecules  ||  Component 2 [p-xylene], 8 Molecules  ||  
+Printing: Component: 0 [ Al-Bicyclo-AddedH-P1-fix-PBC.cif ], NumMol: 1, Molsize: 448, Total atoms: 448, Printable atoms: 448
+Printing: Component: 1 [ BiCyclo-Linker ], NumMol: 64, Molsize: 22, Total atoms: 1408, Printable atoms: 1408
+Printing: Component: 2 [ p-xylene ], NumMol: 8, Molsize: 12, Total atoms: 96, Printable atoms: 96
+Total atoms: 1952, Printable atoms: 1952
 Component 0, Molsize: 448
 Component 1, Molsize: 22
 Component 2, Molsize: 12
-PRODUCTION Cycle: 15000, 10 Adsorbate Molecules, Total Energy: 5517110206.85556  ||  Component 0 [Al-Bicyclo-AddedH-P1-fix-PBC.cif], 1 Molecules  ||  Component 1 [BiCyclo-Linker], 64 Molecules  ||  Component 2 [p-xylene], 10 Molecules  ||  
-Printing: Component: 0 [ Al-Bicyclo-AddedH-P1-fix-PBC.cif ], NumMol: 1, Molsize: 448
-Printing: Component: 1 [ BiCyclo-Linker ], NumMol: 64, Molsize: 22
-Printing: Component: 2 [ p-xylene ], NumMol: 10, Molsize: 12
+PRODUCTION Cycle: 15000, 9 Adsorbate Molecules, Total Energy: 5517118469.16678  ||  Component 0 [Al-Bicyclo-AddedH-P1-fix-PBC.cif], 1 Molecules  ||  Component 1 [BiCyclo-Linker], 64 Molecules  ||  Component 2 [p-xylene], 9 Molecules  ||  
+Printing: Component: 0 [ Al-Bicyclo-AddedH-P1-fix-PBC.cif ], NumMol: 1, Molsize: 448, Total atoms: 448, Printable atoms: 448
+Printing: Component: 1 [ BiCyclo-Linker ], NumMol: 64, Molsize: 22, Total atoms: 1408, Printable atoms: 1408
+Printing: Component: 2 [ p-xylene ], NumMol: 9, Molsize: 12, Total atoms: 108, Printable atoms: 108
+Total atoms: 1964, Printable atoms: 1964
 Component 0, Molsize: 448
 Component 1, Molsize: 22
 Component 2, Molsize: 12
-PRODUCTION Cycle: 20000, 11 Adsorbate Molecules, Total Energy: 5517107681.33981  ||  Component 0 [Al-Bicyclo-AddedH-P1-fix-PBC.cif], 1 Molecules  ||  Component 1 [BiCyclo-Linker], 64 Molecules  ||  Component 2 [p-xylene], 11 Molecules  ||  
-Printing: Component: 0 [ Al-Bicyclo-AddedH-P1-fix-PBC.cif ], NumMol: 1, Molsize: 448
-Printing: Component: 1 [ BiCyclo-Linker ], NumMol: 64, Molsize: 22
-Printing: Component: 2 [ p-xylene ], NumMol: 11, Molsize: 12
+PRODUCTION Cycle: 20000, 9 Adsorbate Molecules, Total Energy: 5517119315.01962  ||  Component 0 [Al-Bicyclo-AddedH-P1-fix-PBC.cif], 1 Molecules  ||  Component 1 [BiCyclo-Linker], 64 Molecules  ||  Component 2 [p-xylene], 9 Molecules  ||  
+Printing: Component: 0 [ Al-Bicyclo-AddedH-P1-fix-PBC.cif ], NumMol: 1, Molsize: 448, Total atoms: 448, Printable atoms: 448
+Printing: Component: 1 [ BiCyclo-Linker ], NumMol: 64, Molsize: 22, Total atoms: 1408, Printable atoms: 1408
+Printing: Component: 2 [ p-xylene ], NumMol: 9, Molsize: 12, Total atoms: 108, Printable atoms: 108
+Total atoms: 1964, Printable atoms: 1964
 Component 0, Molsize: 448
 Component 1, Molsize: 22
 Component 2, Molsize: 12
-PRODUCTION Cycle: 25000, 11 Adsorbate Molecules, Total Energy: 5517100650.21599  ||  Component 0 [Al-Bicyclo-AddedH-P1-fix-PBC.cif], 1 Molecules  ||  Component 1 [BiCyclo-Linker], 64 Molecules  ||  Component 2 [p-xylene], 11 Molecules  ||  
-Printing: Component: 0 [ Al-Bicyclo-AddedH-P1-fix-PBC.cif ], NumMol: 1, Molsize: 448
-Printing: Component: 1 [ BiCyclo-Linker ], NumMol: 64, Molsize: 22
-Printing: Component: 2 [ p-xylene ], NumMol: 11, Molsize: 12
+PRODUCTION Cycle: 25000, 9 Adsorbate Molecules, Total Energy: 5517120329.94690  ||  Component 0 [Al-Bicyclo-AddedH-P1-fix-PBC.cif], 1 Molecules  ||  Component 1 [BiCyclo-Linker], 64 Molecules  ||  Component 2 [p-xylene], 9 Molecules  ||  
+Printing: Component: 0 [ Al-Bicyclo-AddedH-P1-fix-PBC.cif ], NumMol: 1, Molsize: 448, Total atoms: 448, Printable atoms: 448
+Printing: Component: 1 [ BiCyclo-Linker ], NumMol: 64, Molsize: 22, Total atoms: 1408, Printable atoms: 1408
+Printing: Component: 2 [ p-xylene ], NumMol: 9, Molsize: 12, Total atoms: 108, Printable atoms: 108
+Total atoms: 1964, Printable atoms: 1964
 Component 0, Molsize: 448
 Component 1, Molsize: 22
 Component 2, Molsize: 12
-PRODUCTION Cycle: 30000, 11 Adsorbate Molecules, Total Energy: 5517107336.88484  ||  Component 0 [Al-Bicyclo-AddedH-P1-fix-PBC.cif], 1 Molecules  ||  Component 1 [BiCyclo-Linker], 64 Molecules  ||  Component 2 [p-xylene], 11 Molecules  ||  
-Printing: Component: 0 [ Al-Bicyclo-AddedH-P1-fix-PBC.cif ], NumMol: 1, Molsize: 448
-Printing: Component: 1 [ BiCyclo-Linker ], NumMol: 64, Molsize: 22
-Printing: Component: 2 [ p-xylene ], NumMol: 11, Molsize: 12
+PRODUCTION Cycle: 30000, 9 Adsorbate Molecules, Total Energy: 5517116393.67773  ||  Component 0 [Al-Bicyclo-AddedH-P1-fix-PBC.cif], 1 Molecules  ||  Component 1 [BiCyclo-Linker], 64 Molecules  ||  Component 2 [p-xylene], 9 Molecules  ||  
+Printing: Component: 0 [ Al-Bicyclo-AddedH-P1-fix-PBC.cif ], NumMol: 1, Molsize: 448, Total atoms: 448, Printable atoms: 448
+Printing: Component: 1 [ BiCyclo-Linker ], NumMol: 64, Molsize: 22, Total atoms: 1408, Printable atoms: 1408
+Printing: Component: 2 [ p-xylene ], NumMol: 9, Molsize: 12, Total atoms: 108, Printable atoms: 108
+Total atoms: 1964, Printable atoms: 1964
 Component 0, Molsize: 448
 Component 1, Molsize: 22
 Component 2, Molsize: 12
-PRODUCTION Cycle: 35000, 12 Adsorbate Molecules, Total Energy: 5517096248.49356  ||  Component 0 [Al-Bicyclo-AddedH-P1-fix-PBC.cif], 1 Molecules  ||  Component 1 [BiCyclo-Linker], 64 Molecules  ||  Component 2 [p-xylene], 12 Molecules  ||  
-Printing: Component: 0 [ Al-Bicyclo-AddedH-P1-fix-PBC.cif ], NumMol: 1, Molsize: 448
-Printing: Component: 1 [ BiCyclo-Linker ], NumMol: 64, Molsize: 22
-Printing: Component: 2 [ p-xylene ], NumMol: 12, Molsize: 12
+PRODUCTION Cycle: 35000, 11 Adsorbate Molecules, Total Energy: 5517100441.79458  ||  Component 0 [Al-Bicyclo-AddedH-P1-fix-PBC.cif], 1 Molecules  ||  Component 1 [BiCyclo-Linker], 64 Molecules  ||  Component 2 [p-xylene], 11 Molecules  ||  
+Printing: Component: 0 [ Al-Bicyclo-AddedH-P1-fix-PBC.cif ], NumMol: 1, Molsize: 448, Total atoms: 448, Printable atoms: 448
+Printing: Component: 1 [ BiCyclo-Linker ], NumMol: 64, Molsize: 22, Total atoms: 1408, Printable atoms: 1408
+Printing: Component: 2 [ p-xylene ], NumMol: 11, Molsize: 12, Total atoms: 132, Printable atoms: 132
+Total atoms: 1988, Printable atoms: 1988
 Component 0, Molsize: 448
 Component 1, Molsize: 22
 Component 2, Molsize: 12
-PRODUCTION Cycle: 40000, 12 Adsorbate Molecules, Total Energy: 5517095768.99667  ||  Component 0 [Al-Bicyclo-AddedH-P1-fix-PBC.cif], 1 Molecules  ||  Component 1 [BiCyclo-Linker], 64 Molecules  ||  Component 2 [p-xylene], 12 Molecules  ||  
-Printing: Component: 0 [ Al-Bicyclo-AddedH-P1-fix-PBC.cif ], NumMol: 1, Molsize: 448
-Printing: Component: 1 [ BiCyclo-Linker ], NumMol: 64, Molsize: 22
-Printing: Component: 2 [ p-xylene ], NumMol: 12, Molsize: 12
+PRODUCTION Cycle: 40000, 11 Adsorbate Molecules, Total Energy: 5517099307.90265  ||  Component 0 [Al-Bicyclo-AddedH-P1-fix-PBC.cif], 1 Molecules  ||  Component 1 [BiCyclo-Linker], 64 Molecules  ||  Component 2 [p-xylene], 11 Molecules  ||  
+Printing: Component: 0 [ Al-Bicyclo-AddedH-P1-fix-PBC.cif ], NumMol: 1, Molsize: 448, Total atoms: 448, Printable atoms: 448
+Printing: Component: 1 [ BiCyclo-Linker ], NumMol: 64, Molsize: 22, Total atoms: 1408, Printable atoms: 1408
+Printing: Component: 2 [ p-xylene ], NumMol: 11, Molsize: 12, Total atoms: 132, Printable atoms: 132
+Total atoms: 1988, Printable atoms: 1988
 Component 0, Molsize: 448
 Component 1, Molsize: 22
 Component 2, Molsize: 12
-PRODUCTION Cycle: 45000, 12 Adsorbate Molecules, Total Energy: 5517094143.72194  ||  Component 0 [Al-Bicyclo-AddedH-P1-fix-PBC.cif], 1 Molecules  ||  Component 1 [BiCyclo-Linker], 64 Molecules  ||  Component 2 [p-xylene], 12 Molecules  ||  
-Printing: Component: 0 [ Al-Bicyclo-AddedH-P1-fix-PBC.cif ], NumMol: 1, Molsize: 448
-Printing: Component: 1 [ BiCyclo-Linker ], NumMol: 64, Molsize: 22
-Printing: Component: 2 [ p-xylene ], NumMol: 12, Molsize: 12
+PRODUCTION Cycle: 45000, 12 Adsorbate Molecules, Total Energy: 5517095140.98077  ||  Component 0 [Al-Bicyclo-AddedH-P1-fix-PBC.cif], 1 Molecules  ||  Component 1 [BiCyclo-Linker], 64 Molecules  ||  Component 2 [p-xylene], 12 Molecules  ||  
+Printing: Component: 0 [ Al-Bicyclo-AddedH-P1-fix-PBC.cif ], NumMol: 1, Molsize: 448, Total atoms: 448, Printable atoms: 448
+Printing: Component: 1 [ BiCyclo-Linker ], NumMol: 64, Molsize: 22, Total atoms: 1408, Printable atoms: 1408
+Printing: Component: 2 [ p-xylene ], NumMol: 12, Molsize: 12, Total atoms: 144, Printable atoms: 144
+Total atoms: 2000, Printable atoms: 2000
 Component 0, Molsize: 448
 Component 1, Molsize: 22
 Component 2, Molsize: 12
 ======================== MOVE STATISTICS FOR COMPONENT [1] (BiCyclo-Linker) ========================
 =====================SPECIAL ROTATION MOVES========================
-Special Rotation Performed: 262
-Special Rotation Accepted:  146
-Max Special Rotation: 0.1427019845, 0.1427019845, 0.1427019845
+Special Rotation Performed: 243
+Special Rotation Accepted:  119
+Max Special Rotation: 0.1577232460, 0.1577232460, 0.1577232460
 ===========================================================
 =====================SWAP MOVES=====================
 Insertion Performed:   0
@@ -356,68 +368,55 @@ Reinsertion Accepted:  0
 ================================================================================================
 ======================== MOVE STATISTICS FOR COMPONENT [2] (p-xylene) ========================
 =====================TRANSLATION MOVES=====================
-Translation Performed: 11437
-Translation Accepted: 4447
-Max Translation: 0.1262757699, 0.1227259409, 0.1573681017
+Translation Performed: 11473
+Translation Accepted: 4485
+Max Translation: 0.1542593200, 0.1499228253, 0.1922419192
 ===========================================================
 =====================ROTATION MOVES========================
-Rotation Performed: 11701
-Rotation Accepted: 4851
-Max Rotation: 0.0413048235, 0.0413048235, 0.0413048235
+Rotation Performed: 11614
+Rotation Accepted: 4759
+Max Rotation: 0.0456526997, 0.0456526997, 0.0456526997
 ===========================================================
 =====================SWAP MOVES=====================
-Insertion Performed:   6092
-Insertion Accepted:    12
-Deletion Performed:    5748
-Deletion Accepted:     0
-Reinsertion Performed: 11682
-Reinsertion Accepted:  0
+Insertion Performed:   6019
+Insertion Accepted:    14
+Deletion Performed:    5789
+Deletion Accepted:     2
+Reinsertion Performed: 11608
+Reinsertion Accepted:  1
 ====================================================
 =====================IDENTITY SWAP MOVES=====================
 =============================================================
 ================================================================================================
+=====================Rosenbluth Summary For Component [2] (p-xylene)=====================
+There are 1 blocks
+=====BLOCK 0=====
+Widom Performed: 0.0
+=========================AVERAGE========================
+Averaged Rosenbluth Weight: 0.0000000000 +/- 0.0000000000
+Averaged Excess Chemical Potential: 0.0000000000 +/- 0.0000000000
+Averaged Henry Coefficient [mol/kg/Pa]: 0 +/- 0
+Averaged Fugacity: 0.0000000000 +/- 0.0000000000
 ============= BLOCK AVERAGES (HEAT OF ADSORPTION: kJ/mol) =========
-WARNING: Matrix Inversion, Gauss-Jordan: Singular Matrix! Qst for the current component may not get calculated correctly!
-TIP: Your molecule may have a hard time getting in/out of the system box. Consider making it better by using some moves or NVT moves to relax the system more!
-WARNING: Matrix Inversion, Gauss-Jordan: Singular Matrix! Qst for the current component may not get calculated correctly!
-TIP: Your molecule may have a hard time getting in/out of the system box. Consider making it better by using some moves or NVT moves to relax the system more!
-WARNING: Matrix Inversion, Gauss-Jordan: Singular Matrix! Qst for the current component may not get calculated correctly!
-TIP: Your molecule may have a hard time getting in/out of the system box. Consider making it better by using some moves or NVT moves to relax the system more!
 COMPONENT [2] (p-xylene)
-BLOCK [0], Blocksize: 10000, Average: -inf
-BLOCK [1], Blocksize: 10000, Average: -52.56298
-BLOCK [2], Blocksize: 10000, Average: -inf
-BLOCK [3], Blocksize: 10000, Average: -88.32619
-BLOCK [4], Blocksize: 10000, Average: -inf
-Overall: Average: -inf, ErrorBar: -nan
+BLOCK [0], Blocksize: 50000, Average: -88.53870
+Overall: Average: -88.53870, ErrorBar: 0.00000
 -----------------------------
 ==============================================================
 =================== BLOCK AVERAGES (LOADING: # MOLECULES)=============
 COMPONENT [0] (Al-Bicyclo-AddedH-P1-fix-PBC.cif)
-BLOCK [0], Blocksize: 10000, Average: 1.00000, ErrorBar: 0.00000
-BLOCK [1], Blocksize: 10000, Average: 1.00000, ErrorBar: 0.00000
-BLOCK [2], Blocksize: 10000, Average: 1.00000, ErrorBar: 0.00000
-BLOCK [3], Blocksize: 10000, Average: 1.00000, ErrorBar: 0.00000
-BLOCK [4], Blocksize: 10000, Average: 1.00000, ErrorBar: 0.00000
+BLOCK [0], Blocksize: 50000, Average: 1.00000, ErrorBar: 0.00000
 Overall: Average: 1.00000, ErrorBar: 0.00000
 NO Equation-of-State calculation, no compressibility, cannot calculate Excess Loadings
 ----------------------------------------------------------
 COMPONENT [1] (BiCyclo-Linker)
-BLOCK [0], Blocksize: 10000, Average: 64.00000, ErrorBar: 0.00000
-BLOCK [1], Blocksize: 10000, Average: 64.00000, ErrorBar: 0.00000
-BLOCK [2], Blocksize: 10000, Average: 64.00000, ErrorBar: 0.00000
-BLOCK [3], Blocksize: 10000, Average: 64.00000, ErrorBar: 0.00000
-BLOCK [4], Blocksize: 10000, Average: 64.00000, ErrorBar: 0.00000
+BLOCK [0], Blocksize: 50000, Average: 64.00000, ErrorBar: 0.00000
 Overall: Average: 64.00000, ErrorBar: 0.00000
 NO Equation-of-State calculation, no compressibility, cannot calculate Excess Loadings
 ----------------------------------------------------------
 COMPONENT [2] (p-xylene)
-BLOCK [0], Blocksize: 10000, Average: 9.00000, ErrorBar: 0.00000
-BLOCK [1], Blocksize: 10000, Average: 9.99210, ErrorBar: 0.66284
-BLOCK [2], Blocksize: 10000, Average: 11.00000, ErrorBar: 0.00000
-BLOCK [3], Blocksize: 10000, Average: 11.78450, ErrorBar: 0.82234
-BLOCK [4], Blocksize: 10000, Average: 12.00000, ErrorBar: 0.00000
-Overall: Average: 10.75532, ErrorBar: 2.25068
+BLOCK [0], Blocksize: 50000, Average: 9.37892, ErrorBar: 3.54255
+Overall: Average: 9.37892, ErrorBar: 0.00000
 NO Equation-of-State calculation, no compressibility, cannot calculate Excess Loadings
 ----------------------------------------------------------
 ======================================================================
@@ -426,34 +425,22 @@ COMPONENT [0] (Al-Bicyclo-AddedH-P1-fix-PBC.cif)
 Framework component 0, molar mass: 432.00000
 Framework component 1, molar mass: 528.00000
 Framework total mass: 15360.00000
-BLOCK [0], Blocksize: 10000, Average: 28.12500, ErrorBar: 0.00000
-BLOCK [1], Blocksize: 10000, Average: 28.12500, ErrorBar: 0.00000
-BLOCK [2], Blocksize: 10000, Average: 28.12500, ErrorBar: 0.00000
-BLOCK [3], Blocksize: 10000, Average: 28.12500, ErrorBar: 0.00000
-BLOCK [4], Blocksize: 10000, Average: 28.12500, ErrorBar: 0.00000
+BLOCK [0], Blocksize: 50000, Average: 28.12500, ErrorBar: 0.00000
 Overall: Average: 28.12500, ErrorBar: 0.00000
 ----------------------------------------------------------
 COMPONENT [1] (BiCyclo-Linker)
 Framework component 0, molar mass: 432.00000
 Framework component 1, molar mass: 528.00000
 Framework total mass: 15360.00000
-BLOCK [0], Blocksize: 10000, Average: 2200.00000, ErrorBar: 0.00000
-BLOCK [1], Blocksize: 10000, Average: 2200.00000, ErrorBar: 0.00000
-BLOCK [2], Blocksize: 10000, Average: 2200.00000, ErrorBar: 0.00000
-BLOCK [3], Blocksize: 10000, Average: 2200.00000, ErrorBar: 0.00000
-BLOCK [4], Blocksize: 10000, Average: 2200.00000, ErrorBar: 0.00000
-Overall: Average: 2200.00000, ErrorBar: 0.00003
+BLOCK [0], Blocksize: 50000, Average: 2200.00000, ErrorBar: 0.00000
+Overall: Average: 2200.00000, ErrorBar: 0.00000
 ----------------------------------------------------------
 COMPONENT [2] (p-xylene)
 Framework component 0, molar mass: 432.00000
 Framework component 1, molar mass: 528.00000
 Framework total mass: 15360.00000
-BLOCK [0], Blocksize: 10000, Average: 62.10938, ErrorBar: 0.00000
-BLOCK [1], Blocksize: 10000, Average: 68.95590, ErrorBar: 4.57425
-BLOCK [2], Blocksize: 10000, Average: 75.91146, ErrorBar: -nan
-BLOCK [3], Blocksize: 10000, Average: 81.32533, ErrorBar: 5.67499
-BLOCK [4], Blocksize: 10000, Average: 82.81250, ErrorBar: 0.00000
-Overall: Average: 74.22291, ErrorBar: 15.53205
+BLOCK [0], Blocksize: 50000, Average: 64.72432, ErrorBar: 24.44730
+Overall: Average: 64.72432, ErrorBar: -nan
 ----------------------------------------------------------
 ==============================================================
 =====================BLOCK AVERAGES (LOADING: mol/kg)=============
@@ -461,54 +448,34 @@ COMPONENT [0] (Al-Bicyclo-AddedH-P1-fix-PBC.cif)
 Framework component 0, molar mass: 432.00000
 Framework component 1, molar mass: 528.00000
 Framework total mass: 15360.00000
-BLOCK [0], Blocksize: 10000, Average: 0.06510, ErrorBar: 0.00000
-BLOCK [1], Blocksize: 10000, Average: 0.06510, ErrorBar: 0.00000
-BLOCK [2], Blocksize: 10000, Average: 0.06510, ErrorBar: 0.00000
-BLOCK [3], Blocksize: 10000, Average: 0.06510, ErrorBar: 0.00000
-BLOCK [4], Blocksize: 10000, Average: 0.06510, ErrorBar: 0.00000
+BLOCK [0], Blocksize: 50000, Average: 0.06510, ErrorBar: -nan
 Overall: Average: 0.06510, ErrorBar: 0.00000
 ----------------------------------------------------------
 COMPONENT [1] (BiCyclo-Linker)
 Framework component 0, molar mass: 432.00000
 Framework component 1, molar mass: 528.00000
 Framework total mass: 15360.00000
-BLOCK [0], Blocksize: 10000, Average: 4.16667, ErrorBar: 0.00000
-BLOCK [1], Blocksize: 10000, Average: 4.16667, ErrorBar: 0.00000
-BLOCK [2], Blocksize: 10000, Average: 4.16667, ErrorBar: 0.00000
-BLOCK [3], Blocksize: 10000, Average: 4.16667, ErrorBar: 0.00000
-BLOCK [4], Blocksize: 10000, Average: 4.16667, ErrorBar: 0.00000
+BLOCK [0], Blocksize: 50000, Average: 4.16667, ErrorBar: -nan
 Overall: Average: 4.16667, ErrorBar: 0.00000
 ----------------------------------------------------------
 COMPONENT [2] (p-xylene)
 Framework component 0, molar mass: 432.00000
 Framework component 1, molar mass: 528.00000
 Framework total mass: 15360.00000
-BLOCK [0], Blocksize: 10000, Average: 0.58594, ErrorBar: 0.00000
-BLOCK [1], Blocksize: 10000, Average: 0.65053, ErrorBar: 0.04315
-BLOCK [2], Blocksize: 10000, Average: 0.71615, ErrorBar: -nan
-BLOCK [3], Blocksize: 10000, Average: 0.76722, ErrorBar: 0.05354
-BLOCK [4], Blocksize: 10000, Average: 0.78125, ErrorBar: -nan
-Overall: Average: 0.70022, ErrorBar: 0.14653
+BLOCK [0], Blocksize: 50000, Average: 0.61061, ErrorBar: 0.23063
+Overall: Average: 0.61061, ErrorBar: -nan
 ----------------------------------------------------------
 ==============================================================
 =====================BLOCK AVERAGES (LOADING: g/L)=============
 COMPONENT [2] (p-xylene)
 Total Unit Cells 16 
-BLOCK [0], Blocksize: 10000, Average: 71.06959, ErrorBar: -nan
-BLOCK [1], Blocksize: 10000, Average: 78.90383, ErrorBar: 5.23416
-BLOCK [2], Blocksize: 10000, Average: 86.86284, ErrorBar: -nan
-BLOCK [3], Blocksize: 10000, Average: 93.05774, ErrorBar: 6.49369
-BLOCK [4], Blocksize: 10000, Average: 94.75946, ErrorBar: 0.00010
-Overall: Average: 84.93069, ErrorBar: 17.77278
+BLOCK [0], Blocksize: 50000, Average: 74.06178, ErrorBar: 27.97420
+Overall: Average: 74.06178, ErrorBar: 0.00000
 ----------------------------------------------------------
 ==============================================================
 =====================BLOCK AVERAGES (VOLUME Å^3)================
-BLOCK [0], Blocksize: 10000, Average: 22290.18313, ErrorBar: 0.03287
-BLOCK [1], Blocksize: 10000, Average: 22290.18313, ErrorBar: 0.03287
-BLOCK [2], Blocksize: 10000, Average: 22290.18313, ErrorBar: 0.03287
-BLOCK [3], Blocksize: 10000, Average: 22290.18313, ErrorBar: 0.03287
-BLOCK [4], Blocksize: 10000, Average: 22290.18313, ErrorBar: 0.03287
-Overall: Average: 22290.18313, ErrorBar: -nan
+BLOCK [0], Blocksize: 50000, Average: 22290.18313, ErrorBar: 0.02290
+Overall: Average: 22290.18313, ErrorBar: 0.00020
 ----------------------------------------------------------
 ==============================================================
 =====================GIBBS MONTE CARLO STATISTICS=====================
@@ -521,68 +488,61 @@ GIBBS PARTICLE TRANSFER MOVE ACCEPTED: 0
 ===============================
 == PRODUCTION PHASE ENDS ==
 ===============================
-Work took 7.590824 seconds
-========================
-== END OF SIMULATION! ==
-========================
+Work took 9.175480 seconds
 ======================================
 CHECKING FINAL ENERGY FOR SYSTEM [0]
 ======================================
 ======================== CALCULATING FINAL STAGE ENERGY ========================
 ****** Calculating VDW + Real Energy (CPU) ******
-Host-Host   VDW: 5523447152.83865; Real: -6257722.45949
-Host-Guest  VDW: -94039.33206; Real: 819.78752
-Guest-Guest VDW: -481.90214; Real: 69.23432
+Host-Host   VDW: 5523452362.41673; Real: -6257684.32124
+Host-Guest  VDW: -99671.75303; Real: 960.69936
+Guest-Guest VDW: -668.74553; Real: 108.74291
 ********** PRINTING COMPONENT ENERGIES**********
 Compoent [0-0], VDW: 0.00000, Real: 0.00000
-Compoent [0-1], VDW: 5523626259.47825, Real: -6724541.90879
-Compoent [0-2], VDW: -21001.74970, Real: -20064.21949
-Compoent [1-1], VDW: -179106.63951, Real: 466819.44929
-Compoent [1-2], VDW: -73037.58236, Real: 20884.00700
-Compoent [2-2], VDW: -481.90214, Real: 69.23432
+Compoent [0-1], VDW: 5523631415.21681, Real: -6724353.98012
+Compoent [0-2], VDW: -20634.99964, Real: -16985.03506
+Compoent [1-1], VDW: -179052.80038, Real: 466669.65889
+Compoent [1-2], VDW: -79036.75339, Real: 17945.73441
+Compoent [2-2], VDW: -668.74553, Real: 108.74291
 ****** Calculating Ewald Energy (CPU) ******
-CPU Guest-Guest Fourier: 3092.35211, Host-Host Fourier: 7337.58662, Framework-Guest Fourier: -1915.20753
+CPU Guest-Guest Fourier: 2993.42756, Host-Host Fourier: 7342.30855, Framework-Guest Fourier: -2333.74778
 Component: 0, SelfAtomE: 7123268.40575 (8567327.89803 kJ/mol)
 Component: 1, SelfAtomE: 1479886.61726 (1779895.57319 kJ/mol)
 Component: 2, SelfAtomE: 39567.42860 (47588.70726 kJ/mol)
 Component: 0, Intra-Molecular ExclusionE: -32892160.48297 (-39560200.18912 kJ/mol)
 Component: 1, Intra-Molecular ExclusionE: -243671.40556 (-293069.51695 kJ/mol)
 Component: 2, Intra-Molecular ExclusionE: 36461.35784 (43852.96053 kJ/mol)
-HostEwald took 0.06097 sec
-Ewald Summation (total energy) on the CPU took 0.06098 secs
+HostEwald took 0.01349 sec
+Ewald Summation (total energy) on the CPU took 0.01349 secs
  ****** CHECKING StructureFactors (SF) Stored on CPU vs. GPU ****** 
 CPU SF: 2280, GPU SF: 2280
 StructureFactor 0, CPU: 0.00000 0.00000, GPU: 0.00000 0.00000
 StructureFactor 1, CPU: 0.00000 0.00000, GPU: 0.00000 0.00000
 StructureFactor 2, CPU: 0.00000 0.00000, GPU: 0.00000 0.00000
-StructureFactor 3, CPU: 0.54165 0.38660, GPU: 0.54165 0.38660
-StructureFactor 4, CPU: 0.14007 -0.89199, GPU: 0.14007 -0.89199
-StructureFactor 5, CPU: -0.95221 -0.14602, GPU: -0.95221 -0.14602
-StructureFactor 6, CPU: -0.38040 0.32527, GPU: -0.38040 0.32527
-StructureFactor 7, CPU: -0.08283 0.33840, GPU: -0.08283 0.33840
-StructureFactor 8, CPU: -0.08859 -0.29338, GPU: -0.08859 -0.29338
-StructureFactor 9, CPU: -0.25973 -0.11774, GPU: -0.25973 -0.11774
+StructureFactor 3, CPU: 0.67040 -0.04646, GPU: 0.67040 -0.04646
+StructureFactor 4, CPU: 0.97339 -0.85523, GPU: 0.97339 -0.85523
+StructureFactor 5, CPU: 0.13872 -0.13988, GPU: 0.13872 -0.13988
+StructureFactor 6, CPU: -0.05852 -0.20396, GPU: -0.05852 -0.20396
+StructureFactor 7, CPU: 0.76758 0.43213, GPU: 0.76758 0.43213
+StructureFactor 8, CPU: 0.47759 -1.27331, GPU: 0.47759 -1.27331
+StructureFactor 9, CPU: -0.19596 0.15046, GPU: -0.19596 0.15046
  ****** CHECKING Framework StructureFactors Stored on CPU ****** 
 Framework Structure Factor 0, real: 0.00000 imag: 0.00000
 Framework Structure Factor 1, real: 0.00000 imag: 0.00000
 Framework Structure Factor 2, real: 0.00000 imag: 0.00000
-Framework Structure Factor 3, real: -0.43043 imag: 0.19371
-Framework Structure Factor 4, real: 0.30542 imag: -0.29222
-Framework Structure Factor 5, real: -0.12305 imag: 0.23637
-Framework Structure Factor 6, real: -0.12883 imag: -0.16239
-Framework Structure Factor 7, real: 0.23034 imag: -0.03350
-Framework Structure Factor 8, real: -0.15782 imag: 0.17863
-Framework Structure Factor 9, real: 0.03038 imag: -0.08723
+Framework Structure Factor 3, real: -0.20714 imag: -0.03123
+Framework Structure Factor 4, real: -0.28280 imag: -0.13459
+Framework Structure Factor 5, real: -0.28969 imag: -0.19149
+Framework Structure Factor 6, real: 0.15167 imag: -0.01679
+Framework Structure Factor 7, real: -0.10962 imag: -0.06495
+Framework Structure Factor 8, real: 0.09302 imag: 0.18858
+Framework Structure Factor 9, real: 0.35408 imag: 0.16355
 VDW + Real on the GPU took 0.00081 secs
-Ewald Summation (total energy) on the GPU took 0.00218 secs
+Ewald Summation (total energy) on the GPU took 0.00113 secs
 Total GPU Energy: 
-HHVDW: 5523447152.83882, HHReal: -6257722.45949, HGVDW: -94039.33206, HGReal: 819.78752, GGVDW: -481.90214, GGReal: 69.23432, HHEwaldE: 8.91143,
- HGEwaldE: -1915.20753,
- GGEwaldE: -13.71864, TailE: 0.00000, DNN_E: 0.00000
-Stored HGVDW: 0.00000, Stored HGReal: 0.00000, Stored HGEwaldE: 0.00000
 ====================== DONE CALCULATING FINAL STAGE ENERGY ======================
 ======================================
-Random Numbers Regenerated 5 times, offset: 166265, randomsize: 333334
+Random Numbers Regenerated 5 times, offset: 171959, randomsize: 333334
 DNN Feature Preparation Time: 0.00000, DNN Prediction Time: 0.00000
 DNN GPU Time: 0.00000, DNN Sort Time: 0.00000, std::sort Time: 0.00000, Featurization Time: 0.00000
 ======================== ENERGY SUMMARY (Simulation 0) =========================
@@ -600,7 +560,7 @@ Ewald [Host-Host]:          0.00000 (0.00000 [K])
  --> Initial Ewald [Host-Host] (excluded):
       -41731658.23635 (-50191678.80166 [K])
 Ewald [Host-Guest]:         0.00000 (0.00000 [K])
-Ewald [Guest-Guest]:        -0.00000 (-0.00000 [K])
+Ewald [Guest-Guest]:        0.00000 (0.00000 [K])
 DNN Energy:                 0.00000 (0.00000 [K])
 Tail Correction Energy:     0.00000 (0.00000 [K])
 Total Energy:               5517182271.87698 (6635649101.50277 [K])
@@ -619,7 +579,7 @@ Ewald [Host-Host]:          0.00000 (0.00000 [K])
  --> Initial Ewald [Host-Host] (excluded):
       -41731658.23635 (-50191678.80166 [K])
 Ewald [Host-Guest]:         0.00000 (0.00000 [K])
-Ewald [Guest-Guest]:        -0.00000 (-0.00000 [K])
+Ewald [Guest-Guest]:        0.00000 (0.00000 [K])
 DNN Energy:                 0.00000 (0.00000 [K])
 Tail Correction Energy:     0.00000 (0.00000 [K])
 Total Energy:               5517182271.87698 (6635649101.50277 [K])
@@ -656,114 +616,176 @@ Total Energy:               0.00000 (0.00000 [K])
 ========================================================================
  *** FINAL STAGE *** 
 ========================================================================
-VDW [Host-Host]:            5523447152.83865 (6643184025.97611 [K])
-VDW [Host-Guest]:           -94039.33206 (-113103.38838 [K])
-VDW [Guest-Guest]:          -481.90214 (-579.59541 [K])
-Real Coulomb [Host-Host]:   -6257722.45949 (-7526314.76895 [K])
-Real Coulomb [Host-Guest]:  819.78752 (985.97836 [K])
-Real Coulomb [Guest-Guest]: 69.23432 (83.26980 [K])
-Ewald [Host-Host]:          8.91143 (10.71799 [K])
+VDW [Host-Host]:            5523452362.41673 (6643190291.66219 [K])
+VDW [Host-Guest]:           -99671.75303 (-119877.63787 [K])
+VDW [Guest-Guest]:          -668.74553 (-804.31649 [K])
+Real Coulomb [Host-Host]:   -6257684.32124 (-7526268.89914 [K])
+Real Coulomb [Host-Guest]:  960.69936 (1155.45645 [K])
+Real Coulomb [Guest-Guest]: 108.74291 (130.78774 [K])
+Ewald [Host-Host]:          13.63337 (16.39718 [K])
  --> Total Ewald [Host-Host]:
-      -41731649.32492 (-50191668.08367 [K])
+      -41731644.60299 (-50191662.40448 [K])
  --> Initial Ewald [Host-Host] (excluded):
       -41731658.23635 (-50191678.80166 [K])
-Ewald [Host-Guest]:         -1915.20753 (-2303.46661 [K])
-Ewald [Guest-Guest]:        -13.71864 (-16.49975 [K])
+Ewald [Host-Guest]:         -2333.74778 (-2806.85513 [K])
+Ewald [Guest-Guest]:        -112.64320 (-135.47871 [K])
 DNN Energy:                 0.00000 (0.00000 [K])
 Tail Correction Energy:     0.00000 (0.00000 [K])
-Total Energy:               5517093878.15204 (6635542788.22316 [K])
+Total Energy:               5517092974.28160 (6635541701.11623 [K])
 ========================================================================
  *** RUNNING DELTA_E (FINAL - CREATE MOLECULE) *** 
 ========================================================================
-VDW [Host-Host]:            7234.41623 (8701.00809 [K])
-VDW [Host-Guest]:           -94039.33206 (-113103.38838 [K])
-VDW [Guest-Guest]:          -481.90214 (-579.59541 [K])
-Real Coulomb [Host-Host]:   -75.91862 (-91.30917 [K])
-Real Coulomb [Host-Guest]:  819.78752 (985.97836 [K])
-Real Coulomb [Guest-Guest]: 69.23432 (83.26980 [K])
-Ewald [Host-Host]:          8.91143 (10.71799 [K])
-Ewald [Host-Guest]:         -1915.20753 (-2303.46661 [K])
-Ewald [Guest-Guest]:        -13.71864 (-16.49975 [K])
+VDW [Host-Host]:            12443.99387 (14966.69363 [K])
+VDW [Host-Guest]:           -99671.75303 (-119877.63787 [K])
+VDW [Guest-Guest]:          -668.74553 (-804.31649 [K])
+Real Coulomb [Host-Host]:   -37.78037 (-45.43936 [K])
+Real Coulomb [Host-Guest]:  960.69936 (1155.45645 [K])
+Real Coulomb [Guest-Guest]: 108.74291 (130.78774 [K])
+Ewald [Host-Host]:          13.63337 (16.39718 [K])
+Ewald [Host-Guest]:         -2333.74778 (-2806.85513 [K])
+Ewald [Guest-Guest]:        -112.64320 (-135.47871 [K])
 DNN Energy:                 0.00000 (0.00000 [K])
 Tail Correction Energy:     0.00000 (0.00000 [K])
-Total Energy:               -88393.72950 (-106313.28509 [K])
+Total Energy:               -89297.60040 (-107400.39256 [K])
 ========================================================================
  *** CHECK DELTA_E (RUNNING FINAL - CREATE MOLECULE) *** 
 ========================================================================
-VDW [Host-Host]:            7234.42079 (8701.01357 [K])
-VDW [Host-Guest]:           -94039.33206 (-113103.38838 [K])
-VDW [Guest-Guest]:          -481.90214 (-579.59541 [K])
-Real Coulomb [Host-Host]:   -75.91862 (-91.30917 [K])
-Real Coulomb [Host-Guest]:  819.78752 (985.97836 [K])
-Real Coulomb [Guest-Guest]: 69.23432 (83.26980 [K])
-Ewald [Host-Host]:          8.91143 (10.71799 [K])
-Ewald [Host-Guest]:         -1915.20753 (-2303.46661 [K])
-Ewald [Guest-Guest]:        -13.71864 (-16.49975 [K])
+VDW [Host-Host]:            12443.99888 (14966.69965 [K])
+VDW [Host-Guest]:           -99671.75303 (-119877.63787 [K])
+VDW [Guest-Guest]:          -668.74553 (-804.31649 [K])
+Real Coulomb [Host-Host]:   -37.78036 (-45.43936 [K])
+Real Coulomb [Host-Guest]:  960.69936 (1155.45645 [K])
+Real Coulomb [Guest-Guest]: 108.74291 (130.78774 [K])
+Ewald [Host-Host]:          13.63337 (16.39718 [K])
+Ewald [Host-Guest]:         -2333.74778 (-2806.85513 [K])
+Ewald [Guest-Guest]:        -112.64320 (-135.47871 [K])
 DNN Energy:                 0.00000 (0.00000 [K])
 Tail Correction Energy:     0.00000 (0.00000 [K])
-Total Energy:               -88393.72494 (-106313.27960 [K])
+Total Energy:               -89297.59539 (-107400.38654 [K])
 ========================================================================
  *** ENERGY DRIFT (CPU FINAL - RUNNING FINAL) *** 
 ========================================================================
-VDW [Host-Host]:            -0.00456 (-0.00548 [K])
+VDW [Host-Host]:            -0.00501 (-0.00602 [K])
 VDW [Host-Guest]:           0.00000 (0.00000 [K])
 VDW [Guest-Guest]:          0.00000 (0.00000 [K])
 Real Coulomb [Host-Host]:   -0.00000 (-0.00000 [K])
-Real Coulomb [Host-Guest]:  -0.00000 (-0.00000 [K])
-Real Coulomb [Guest-Guest]: -0.00000 (-0.00000 [K])
-Ewald [Host-Host]:          -0.00000 (-0.00000 [K])
+Real Coulomb [Host-Guest]:  0.00000 (0.00000 [K])
+Real Coulomb [Guest-Guest]: 0.00000 (0.00000 [K])
+Ewald [Host-Host]:          0.00000 (0.00000 [K])
 Ewald [Host-Guest]:         -0.00000 (-0.00000 [K])
 Ewald [Guest-Guest]:        0.00000 (0.00000 [K])
 DNN Energy:                 0.00000 (0.00000 [K])
 Tail Correction Energy:     0.00000 (0.00000 [K])
-Total Energy:               -0.00456 (-0.00548 [K])
+Total Energy:               -0.00501 (-0.00602 [K])
 ========================================================================
  *** GPU DRIFT (GPU FINAL - CPU FINAL) *** 
 ========================================================================
-VDW [Host-Host]:            -0.00018 (-0.00021 [K])
-VDW [Host-Guest]:           -0.00000 (-0.00000 [K])
-VDW [Guest-Guest]:          0.00000 (0.00000 [K])
+VDW [Host-Host]:            0.00027 (0.00033 [K])
+VDW [Host-Guest]:           0.00000 (0.00000 [K])
+VDW [Guest-Guest]:          -0.00000 (-0.00000 [K])
 Real Coulomb [Host-Host]:   0.00000 (0.00000 [K])
-Real Coulomb [Host-Guest]:  0.00000 (0.00000 [K])
+Real Coulomb [Host-Guest]:  -0.00000 (-0.00000 [K])
 Real Coulomb [Guest-Guest]: -0.00000 (-0.00000 [K])
 Ewald [Host-Host]:          0.00000 (0.00000 [K])
 Ewald [Host-Guest]:         0.00000 (0.00000 [K])
 Ewald [Guest-Guest]:        -0.00000 (-0.00000 [K])
 DNN Energy:                 0.00000 (0.00000 [K])
 Tail Correction Energy:     0.00000 (0.00000 [K])
-Total Energy:               -0.00018 (-0.00021 [K])
+Total Energy:               0.00027 (0.00033 [K])
 ========================================================================
 ================================================================================
 ======================== PRODUCTION PHASE AVERAGE ENERGIES (Simulation 0) =========================
  *** PRODUCTION PHASE AVERAGE ENERGY *** 
 ========================================================================
-VDW [Host-Host]:            9799.59848 (11786.21507 [K])
-VDW [Host-Guest]:           -85486.27097 (-102816.41410 [K])
-VDW [Guest-Guest]:          -356.42366 (-428.67939 [K])
-Real Coulomb [Host-Host]:   -51.13514 (-61.50147 [K])
-Real Coulomb [Host-Guest]:  802.09454 (964.69858 [K])
-Real Coulomb [Guest-Guest]: 55.10790 (66.27961 [K])
-Ewald [Host-Host]:          11.38299 (13.69060 [K])
-Ewald [Host-Guest]:         -1695.03386 (-2038.65839 [K])
-Ewald [Guest-Guest]:        11.38299 (13.69060 [K])
+VDW [Host-Host]:            5523451751.94144 (6643189557.42873 [K])
+VDW [Host-Guest]:           -75959.70622 (-91358.58333 [K])
+VDW [Guest-Guest]:          -477.88856 (-574.76818 [K])
+Real Coulomb [Host-Host]:   -6257684.22692 (-7526268.78570 [K])
+Real Coulomb [Host-Guest]:  890.69993 (1071.26643 [K])
+Real Coulomb [Guest-Guest]: 74.68662 (89.82741 [K])
+Ewald [Host-Host]:          13.34465 (16.04993 [K])
+Ewald [Host-Guest]:         -1804.63886 (-2170.48298 [K])
+Ewald [Guest-Guest]:        -55.34782 (-66.56817 [K])
 DNN Energy:                 0.00000 (0.00000 [K])
 Tail Correction Energy:     0.00000 (0.00000 [K])
-Total Energy:               -76909.29671 (-92500.67887 [K])
+Total Energy:               5517116748.86425 (6635570295.38414 [K])
 ========================================================================
  *** PRODUCTION PHASE AVERAGE ENERGY ERRORBAR *** 
 ========================================================================
-VDW [Host-Host]:            1638.71301 (1970.91994 [K])
-VDW [Host-Guest]:           17815.60355 (21427.25903 [K])
-VDW [Guest-Guest]:          96.84756 (116.48091 [K])
-Real Coulomb [Host-Host]:   6.30773 (7.58646 [K])
-Real Coulomb [Host-Guest]:  307.68706 (370.06270 [K])
-Real Coulomb [Guest-Guest]: 12.58399 (15.13507 [K])
-Ewald [Host-Host]:          1.10212 (1.32555 [K])
-Ewald [Host-Guest]:         345.55581 (415.60837 [K])
-Ewald [Guest-Guest]:        1.10212 (1.32555 [K])
+VDW [Host-Host]:            0.00000 (0.00000 [K])
+VDW [Host-Guest]:           0.00000 (0.00000 [K])
+VDW [Guest-Guest]:          0.00000 (0.00000 [K])
+Real Coulomb [Host-Host]:   0.00000 (0.00000 [K])
+Real Coulomb [Host-Guest]:  0.00000 (0.00000 [K])
+Real Coulomb [Guest-Guest]: 0.00000 (0.00000 [K])
+Ewald [Host-Host]:          0.00000 (0.00000 [K])
+Ewald [Host-Guest]:         0.00000 (0.00000 [K])
+Ewald [Guest-Guest]:        0.00000 (0.00000 [K])
 DNN Energy:                 0.00000 (0.00000 [K])
 Tail Correction Energy:     0.00000 (0.00000 [K])
-Total Energy:               20225.50295 (24325.70356 [K])
+Total Energy:               0.00000 (0.00000 [K])
+========================================================================
+================================================================================
+======================== WIDOM ADSORPTION ENERGIES (Simulation 0) =========================
+ *** AVERAGE WIDOM ADSORPTION ENERGY for BiCyclo-Linker *** 
+========================================================================
+VDW [Host-Host]:            0.00000 (0.00000 [K])
+VDW [Host-Guest]:           0.00000 (0.00000 [K])
+VDW [Guest-Guest]:          0.00000 (0.00000 [K])
+Real Coulomb [Host-Host]:   0.00000 (0.00000 [K])
+Real Coulomb [Host-Guest]:  0.00000 (0.00000 [K])
+Real Coulomb [Guest-Guest]: 0.00000 (0.00000 [K])
+Ewald [Host-Host]:          0.00000 (0.00000 [K])
+Ewald [Host-Guest]:         0.00000 (0.00000 [K])
+Ewald [Guest-Guest]:        0.00000 (0.00000 [K])
+DNN Energy:                 0.00000 (0.00000 [K])
+Tail Correction Energy:     0.00000 (0.00000 [K])
+Total Energy:               0.00000 (0.00000 [K])
+========================================================================
+ *** WIDOM ADSORPTION ENERGY ERRORBAR for BiCyclo-Linker *** 
+========================================================================
+VDW [Host-Host]:            0.00000 (0.00000 [K])
+VDW [Host-Guest]:           0.00000 (0.00000 [K])
+VDW [Guest-Guest]:          0.00000 (0.00000 [K])
+Real Coulomb [Host-Host]:   0.00000 (0.00000 [K])
+Real Coulomb [Host-Guest]:  0.00000 (0.00000 [K])
+Real Coulomb [Guest-Guest]: 0.00000 (0.00000 [K])
+Ewald [Host-Host]:          0.00000 (0.00000 [K])
+Ewald [Host-Guest]:         0.00000 (0.00000 [K])
+Ewald [Guest-Guest]:        0.00000 (0.00000 [K])
+DNN Energy:                 0.00000 (0.00000 [K])
+Tail Correction Energy:     0.00000 (0.00000 [K])
+Total Energy:               0.00000 (0.00000 [K])
+========================================================================
+ *** AVERAGE WIDOM ADSORPTION ENERGY for p-xylene *** 
+========================================================================
+VDW [Host-Host]:            0.00000 (0.00000 [K])
+VDW [Host-Guest]:           0.00000 (0.00000 [K])
+VDW [Guest-Guest]:          0.00000 (0.00000 [K])
+Real Coulomb [Host-Host]:   0.00000 (0.00000 [K])
+Real Coulomb [Host-Guest]:  0.00000 (0.00000 [K])
+Real Coulomb [Guest-Guest]: 0.00000 (0.00000 [K])
+Ewald [Host-Host]:          0.00000 (0.00000 [K])
+Ewald [Host-Guest]:         0.00000 (0.00000 [K])
+Ewald [Guest-Guest]:        0.00000 (0.00000 [K])
+DNN Energy:                 0.00000 (0.00000 [K])
+Tail Correction Energy:     0.00000 (0.00000 [K])
+Total Energy:               0.00000 (0.00000 [K])
+========================================================================
+ *** WIDOM ADSORPTION ENERGY ERRORBAR for p-xylene *** 
+========================================================================
+VDW [Host-Host]:            0.00000 (0.00000 [K])
+VDW [Host-Guest]:           0.00000 (0.00000 [K])
+VDW [Guest-Guest]:          0.00000 (0.00000 [K])
+Real Coulomb [Host-Host]:   0.00000 (0.00000 [K])
+Real Coulomb [Host-Guest]:  0.00000 (0.00000 [K])
+Real Coulomb [Guest-Guest]: 0.00000 (0.00000 [K])
+Ewald [Host-Host]:          0.00000 (0.00000 [K])
+Ewald [Host-Guest]:         0.00000 (0.00000 [K])
+Ewald [Guest-Guest]:        0.00000 (0.00000 [K])
+DNN Energy:                 0.00000 (0.00000 [K])
+Tail Correction Energy:     0.00000 (0.00000 [K])
+Total Energy:               0.00000 (0.00000 [K])
 ========================================================================
 ================================================================================
 DNN Rejection Summary:
@@ -789,13 +811,20 @@ PseudoAtom Type: H[6], #: 768
 PseudoAtom Type: CH3_xyl[7], #: 24
 PseudoAtom Type: C_xyl[8], #: 72
 PseudoAtom Type: H_xyl[9], #: 48
+========================
+== END OF SIMULATION! ==
+========================
+HHVDW: 5523452362.41646, HHReal: -6257684.32124, HGVDW: -99671.75303, HGReal: 960.69936, GGVDW: -668.74553, GGReal: 108.74291, HHEwaldE: 13.63337,
+ HGEwaldE: -2333.74778,
+ GGEwaldE: -112.64320, TailE: 0.00000, DNN_E: 0.00000
+Stored HGVDW: 0.00000, Stored HGReal: 0.00000, Stored HGEwaldE: 0.00000
 
 ===========================
 ==    END OF PROGRAM!    ==
 == PRINTING MEMORY USAGE ==
 ===========================
-Total Program Size: 5581 MB
+Total Program Size: 9559 MB
 Resident Set Size: 126 MB
-Shared Pages: 101 MB
-Text (code): 0 MB
-Data + Stack: 71 MB
+Shared Pages: 97 MB
+Text (code): 1 MB
+Data + Stack: 92 MB

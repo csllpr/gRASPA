@@ -191,7 +191,8 @@ inline void Prepare_Widom(WidomStruct& Widom, Boxsize Box, Simulations& Sims, Co
   SystemComponents.flag        = (bool*)malloc(MaxTrialsize * sizeof(bool));
   // initialize the overlap flags to false (no overlap)
   for (size_t i = 0; i < MaxTrialsize; ++i) SystemComponents.flag[i] = false;
-  cudaMallocHost(&Sims.device_flag,          MaxTrialsize * sizeof(bool));
+  cudaMalloc(&Sims.device_flag,              MaxTrialsize * sizeof(bool));
+  cudaMemset(Sims.device_flag, 0, MaxTrialsize * sizeof(bool));
  
   size_t vdw_real_size = (MaxResultsize/DEFAULTTHREAD + 1);
   size_t blocksum_size = vdw_real_size;
@@ -203,11 +204,12 @@ inline void Prepare_Widom(WidomStruct& Widom, Boxsize Box, Simulations& Sims, Co
   cudaMalloc(&SystemComponents.tempMolStorage, MaxAdsorbateMolsize * 2 * sizeof(double3));
   printf("Allocated %zu double3 for reinsertion!\n", MaxAdsorbateMolsize * 2);
 
-  cudaMallocHost(&Sims.Blocksum, blocksum_size*sizeof(double));
+  cudaMalloc(&Sims.Blocksum, blocksum_size*sizeof(double));
+  cudaMemset(Sims.Blocksum, 0, blocksum_size * sizeof(double));
   SystemComponents.host_array = (double*) malloc(blocksum_size*sizeof(double));
 
-  cudaMallocManaged(&Sims.ExcludeList,        10 * sizeof(int2));
-  for(size_t i = 0; i < 10; i++) Sims.ExcludeList[i] = {-1, -1}; //Initialize with negative # so that nothing is ignored//
+  cudaMalloc(&Sims.ExcludeList,        10 * sizeof(int2));
+  ResetExcludeList(Sims);
   //cudaMalloc(&Sims.Blocksum,             (MaxResultsize/DEFAULTTHREAD + 1)*sizeof(double));
 
   fprintf(SystemComponents.OUTPUT, "Allocated Blocksum size: %zu, vdw_real size: %zu, fourier_size: %zu\n", blocksum_size, vdw_real_size, fourier_size);

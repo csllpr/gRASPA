@@ -292,11 +292,10 @@ void VolumeMove(Components& SystemComponents, Simulations& Sim, ForceField FF)
     CopyScaledPositions<<<Nblock, Nthread>>>(Sim.d_a, SystemComponents.NComponents.x, ScaleFirstComponentFramework, totMol);
     checkCUDAError("Volume Move: Error in CopyScaledPositions\n");
     SystemComponents.deltaE += DeltaE;
-    //Update Eik if accepted from tempEik to StoredEik, BUG (adsorbate/framework species all needs to be updated)!!!//
+    // Box moves recompute the full Ewald state, so commit both stored structure-factor arrays together.
     if(!FF.noCharges)
     {
-      std::swap(Sim.Box.tempEik,          Sim.Box.AdsorbateEik);
-      std::swap(Sim.Box.tempFrameworkEik, Sim.Box.FrameworkEik);
+      Copy_Ewald_Vector(Sim);
       SystemComponents.EikAllocateSize = SystemComponents.tempEikAllocateSize;
     }
   }
@@ -453,11 +452,10 @@ void NVTGibbsMove(std::vector<Components>& SystemComponents, Simulations*& Sims,
       if(Get_TotalNumberOfMolecule_In_Box(SystemComponents[sim]) > 1e-10)
       CopyScaledPositions<<<Nblock, Nthread>>>(Sims[sim].d_a, SystemComponents[sim].NComponents.x, ScaleFramework, totMol);
       checkCUDAError("NVTGibbs: Error in CopyScaledPositions\n");
-      //Update Eik if accepted from tempEik to StoredEik, BUG (adsorbate/framework species all needs to be updated)!!!//
+      // Box moves recompute the full Ewald state, so commit both stored structure-factor arrays together.
       if(!FF.noCharges)
       {
-        std::swap(Sims[sim].Box.tempEik,          Sims[sim].Box.AdsorbateEik);
-        std::swap(Sims[sim].Box.tempFrameworkEik, Sims[sim].Box.FrameworkEik);
+        Copy_Ewald_Vector(Sims[sim]);
         SystemComponents[sim].EikAllocateSize = SystemComponents[sim].tempEikAllocateSize;
       }
     }

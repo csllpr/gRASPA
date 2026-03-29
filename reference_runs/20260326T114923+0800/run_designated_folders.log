@@ -1,0 +1,72 @@
+/home/csllpr/source/gRASPA/src_clean/nvc_main.x: symbol lookup error: /opt/nvidia/hpc_sdk/Linux_x86_64/24.5/compilers/lib/libacccuda.so: undefined symbol: __pgi_cuda_set_device_register_callback
+rm: 无法删除 'AllData': 没有那个文件或目录
+rm: 无法删除 'FirstBead': 没有那个文件或目录
+rm: 无法删除 'Lambda': 没有那个文件或目录
+rm: 无法删除 'Movies': 没有那个文件或目录
+rm: 无法删除 'Restart': 没有那个文件或目录
+rm: 无法删除 'TMMC': 没有那个文件或目录
+/home/csllpr/source/gRASPA/src_clean/nvc_main.x: symbol lookup error: /opt/nvidia/hpc_sdk/Linux_x86_64/24.5/compilers/lib/libacccuda.so: undefined symbol: __pgi_cuda_set_device_register_callback
+rm: 无法删除 'FirstBead': 没有那个文件或目录
+/home/csllpr/source/gRASPA/src_clean/nvc_main.x: symbol lookup error: /opt/nvidia/hpc_sdk/Linux_x86_64/24.5/compilers/lib/libacccuda.so: undefined symbol: __pgi_cuda_set_device_register_callback
+rm: 无法删除 'FirstBead': 没有那个文件或目录
+rm: 无法删除 'Lambda': 没有那个文件或目录
+/home/csllpr/source/gRASPA/src_clean/nvc_main.x: symbol lookup error: /opt/nvidia/hpc_sdk/Linux_x86_64/24.5/compilers/lib/libacccuda.so: undefined symbol: __pgi_cuda_set_device_register_callback
+rm: 无法删除 'AllData': 没有那个文件或目录
+rm: 无法删除 'FirstBead': 没有那个文件或目录
+rm: 无法删除 'Lambda': 没有那个文件或目录
+rm: 无法删除 'Movies': 没有那个文件或目录
+rm: 无法删除 'Restart': 没有那个文件或目录
+rm: 无法删除 'TMMC': 没有那个文件或目录
+/home/csllpr/source/gRASPA/src_clean/nvc_main.x: symbol lookup error: /opt/nvidia/hpc_sdk/Linux_x86_64/24.5/compilers/lib/libacccuda.so: undefined symbol: __pgi_cuda_set_device_register_callback
+rm: 无法删除 'AllData': 没有那个文件或目录
+rm: 无法删除 'FirstBead': 没有那个文件或目录
+rm: 无法删除 'Lambda': 没有那个文件或目录
+rm: 无法删除 'Movies': 没有那个文件或目录
+rm: 无法删除 'Restart': 没有那个文件或目录
+rm: 无法删除 'TMMC': 没有那个文件或目录
+/home/csllpr/source/gRASPA/src_clean/nvc_main.x: symbol lookup error: /opt/nvidia/hpc_sdk/Linux_x86_64/24.5/compilers/lib/libacccuda.so: undefined symbol: __pgi_cuda_set_device_register_callback
+rm: 无法删除 'AllData': 没有那个文件或目录
+rm: 无法删除 'FirstBead': 没有那个文件或目录
+rm: 无法删除 'Lambda': 没有那个文件或目录
+rm: 无法删除 'Movies': 没有那个文件或目录
+rm: 无法删除 'Restart': 没有那个文件或目录
+rm: 无法删除 'TMMC': 没有那个文件或目录
+/home/csllpr/source/gRASPA/src_clean/nvc_main.x: symbol lookup error: /opt/nvidia/hpc_sdk/Linux_x86_64/24.5/compilers/lib/libacccuda.so: undefined symbol: __pgi_cuda_set_device_register_callback
+rm: 无法删除 'AllData': 没有那个文件或目录
+rm: 无法删除 'FirstBead': 没有那个文件或目录
+rm: 无法删除 'Lambda': 没有那个文件或目录
+rm: 无法删除 'Movies': 没有那个文件或目录
+rm: 无法删除 'Restart': 没有那个文件或目录
+rm: 无法删除 'TMMC': 没有那个文件或目录
+/home/csllpr/source/gRASPA/src_clean/nvc_main.x: symbol lookup error: /opt/nvidia/hpc_sdk/Linux_x86_64/24.5/compilers/lib/libacccuda.so: undefined symbol: __pgi_cuda_set_device_register_callback
+rm: 无法删除 'AllData': 没有那个文件或目录
+rm: 无法删除 'FirstBead': 没有那个文件或目录
+rm: 无法删除 'Lambda': 没有那个文件或目录
+rm: 无法删除 'Movies': 没有那个文件或目录
+rm: 无法删除 'Restart': 没有那个文件或目录
+rm: 无法删除 'TMMC': 没有那个文件或目录
+/home/csllpr/source/gRASPA/src_clean/nvc_main.x: symbol lookup error: /opt/nvidia/hpc_sdk/Linux_x86_64/24.5/compilers/lib/libacccuda.so: undefined symbol: __pgi_cuda_set_device_register_callback
+rm: 无法删除 'AllData': 没有那个文件或目录
+rm: 无法删除 'FirstBead': 没有那个文件或目录
+rm: 无法删除 'Lambda': 没有那个文件或目录
+rm: 无法删除 'Movies': 没有那个文件或目录
+rm: 无法删除 'Restart': 没有那个文件或目录
+rm: 无法删除 'TMMC': 没有那个文件或目录
+Simulation CO2-MFI has finished.
+
+Simulation Methane-TMMC has finished.
+
+Simulation Bae-Mixture has finished.
+
+Simulation NU2000-pX-LinkerRotations has finished.
+
+Simulation Tail-Correction has finished.
+
+Simulation Reference_NIST_SPCE/Box-1/ has finished.
+
+Simulation Reference_NIST_SPCE/Box-2/ has finished.
+
+Simulation Reference_NIST_SPCE/Box-3/ has finished.
+
+Simulation Reference_NIST_SPCE/Box-4/ has finished.
+

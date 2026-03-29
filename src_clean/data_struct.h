@@ -7,6 +7,9 @@
 #include <cstdlib>
 #include <random>
 #include <optional>
+#include <limits>
+#include <cmath>
+#include <stdexcept>
 
 //#include "axpy.h"
 //###PATCH_LCLIN_DATA_STRUCT_H###//
@@ -15,6 +18,13 @@
 #define BLOCKSIZE 1024
 #define DEFAULTTHREAD 128
 double Get_Uniform_Random();
+
+inline int CheckedSizeToInt(size_t value, const char* label)
+{
+  if(value > static_cast<size_t>(std::numeric_limits<int>::max()))
+    throw std::runtime_error(std::string(label) + " exceeds 32-bit integer range");
+  return static_cast<int>(value);
+}
 
 enum MoveTypes {TRANSLATION = 0, ROTATION, SINGLE_INSERTION, SINGLE_DELETION, SPECIAL_ROTATION, INSERTION, DELETION, REINSERTION, CBCF_LAMBDACHANGE, CBCF_INSERTION, CBCF_DELETION, IDENTITY_SWAP, WIDOM};
 
@@ -33,6 +43,8 @@ enum ROTATION_AXIS {X = 0, Y, Z, SELF_DEFINED};
 enum INTERACTION_TYPES {HH = 0, HG, GG};
 
 enum RESTART_FILE_TYPES {RASPA_RESTART = 0, LAMMPS_DATA};
+
+enum ADAPTIVE_CRITERIA_MODE {ADAPTIVE_CRITERIA_ANY = 0, ADAPTIVE_CRITERIA_ALL};
 
 //Zhao's note: For the stage of evaluating total energy of the system//
 enum ENERGYEVALSTAGE {INITIAL = 0, CREATEMOL, FINAL, CREATEMOL_DELTA, DELTA, CREATEMOL_DELTA_CHECK, DELTA_CHECK, DRIFT, GPU_DRIFT, AVERAGE, AVERAGE_ERR, WIDOM_AVG, WIDOM_ERR};
@@ -74,6 +86,49 @@ struct Gibbs
   int2 GibbsBoxStats = {0, 0};
   int2 TotalGibbsBoxStats = {0, 0};
   int2 GibbsXferStats = {0, 0};
+};
+
+struct AdaptiveProductionSettings
+{
+  bool   Enabled = false;
+  int    CriteriaMode = ADAPTIVE_CRITERIA_ANY;
+  size_t MaximumCycles = 0;
+  size_t BatchCycles = 0;
+  size_t MinimumBatches = 5;
+  size_t ConsecutivePasses = 2;
+  size_t MinimumWidomSamples = 1;
+  double RelativeTolerance = 0.0;
+  double RelativeFloor = 1.0e-12;
+  double HenryAbsoluteTolerance = -1.0;
+  double HeatAbsoluteTolerance = -1.0;
+};
+
+struct AdaptiveComponentTarget
+{
+  bool MonitorHenryCoefficient = false;
+  bool MonitorHeatOfAdsorption = false;
+};
+
+struct AdaptiveObservableStatus
+{
+  bool   Enabled = false;
+  bool   Available = false;
+  bool   Passed = false;
+  size_t ValidBatches = 0;
+  double Mean = 0.0;
+  double HalfWidth = std::numeric_limits<double>::infinity();
+  double RelativeHalfWidth = std::numeric_limits<double>::infinity();
+};
+
+struct AdaptiveProductionState
+{
+  bool   Converged = false;
+  size_t CyclesCompleted = 0;
+  size_t CompletedBlocks = 0;
+  size_t ConsecutivePasses = 0;
+  std::string StopReason;
+  std::vector<AdaptiveObservableStatus> HenryStatus;
+  std::vector<AdaptiveObservableStatus> HeatStatus;
 };
 
 struct LAMBDA
@@ -977,6 +1032,7 @@ struct Components
 
   size_t  Nblock=5;                                 // Number of Blocks for block averages
   size_t  CURRENTCYCLE=0;
+  size_t  ConfiguredNblock=5;                       // User configured NumberOfBlocks, preserved when adaptive production repurposes Nblock
   double  DNNPredictTime=0.0; 
   double  DNNFeatureTime=0.0;
   double  DNNGPUTime=0.0;
@@ -1034,6 +1090,8 @@ struct Components
 
   std::vector<double>Compressibility;            //Compressibility for each component, calculated when PR-EOS is used//
   std::vector<double>AmountOfExcessMolecules;    //For excess loading//
+  std::vector<AdaptiveComponentTarget>AdaptiveTargets;
+  AdaptiveProductionState AdaptiveState;
   std::vector<std::vector<double2>>ExcessLoading; //Average excess loadings for adsorbates//
   
   double HeliumVoidFraction = 0.0;
@@ -1255,12 +1313,39 @@ struct Simulations //For multiple simulations//
   Atoms   New;                  // Temporary data storage for New Configuration //
   Atoms   Temp;                 // Temporary storage (for xfering data and accepting move) //
   int2*   ExcludeList;          // Atoms to exclude during energy calculations: x: component, y: molecule-ID (may need to add z and make it int3, z: atom-ID)
+  int2    HostExcludeList[10];  // Host mirror for ExcludeList so hot paths do not rely on managed memory //
   double* Blocksum;             // Block sums for partial reduction //
   bool*   device_flag;          // flags for overlaps on the device //
   size_t  start_position;       // Start position for reading data in d_a when proposing a trial position for moves //
   size_t  Nblocks;              // Number of blocks for energy calculation, NOT block averages! //
   Boxsize Box;                  // Each simulation (system) has its own box //
 };
+
+inline void CopyBlocksumToHost(Components& SystemComponents, const Simulations& Sims, size_t count)
+{
+  if(count == 0) return;
+  cudaMemcpy(SystemComponents.host_array, Sims.Blocksum, count * sizeof(double), cudaMemcpyDeviceToHost);
+}
+
+inline void CopyDeviceFlagsToHost(Components& SystemComponents, const Simulations& Sims, size_t count)
+{
+  if(count == 0) return;
+  cudaMemcpy(SystemComponents.flag, Sims.device_flag, count * sizeof(bool), cudaMemcpyDeviceToHost);
+}
+
+inline void SetExcludeListEntry(Simulations& Sims, size_t index, int2 value)
+{
+  if(index >= 10) throw std::runtime_error("ExcludeList index out of range");
+  Sims.HostExcludeList[index] = value;
+  cudaMemcpy(&Sims.ExcludeList[index], &Sims.HostExcludeList[index], sizeof(int2), cudaMemcpyHostToDevice);
+}
+
+inline void ResetExcludeList(Simulations& Sims)
+{
+  for(size_t i = 0; i < 10; i++)
+    Sims.HostExcludeList[i] = {-1, -1};
+  cudaMemcpy(Sims.ExcludeList, Sims.HostExcludeList, 10 * sizeof(int2), cudaMemcpyHostToDevice);
+}
 
 
 
@@ -1380,6 +1465,7 @@ struct Variables
   bool RunTogether = false;
 
   size_t StructureFactor_Multiplier = 2; //Add extra structure factor storage for volume moves//
+  AdaptiveProductionSettings AdaptiveProduction;
 
   size_t Allocate_space_Adsorbate = 0;
 

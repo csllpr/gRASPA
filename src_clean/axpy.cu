@@ -68,6 +68,355 @@ inline void GenerateRestartMovies(Variables& Vars, size_t systemId, PseudoAtomDe
   if(SimulationMode == PRODUCTION)  create_movie_file(SystemComponents.HostSystem, SystemComponents, HostBox, PseudoAtom.Name, systemId);
 }
 
+static inline size_t CeilDivide(size_t numerator, size_t denominator)
+{
+  if(denominator == 0) throw std::runtime_error("Attempted division by zero while preparing adaptive production");
+  return numerator / denominator + ((numerator % denominator) > 0 ? 1 : 0);
+}
+
+static inline double FrameworkDensityFromVolume(const Components& SystemComponents, double volume, const Units& Constants)
+{
+  if(volume <= 0.0) return std::numeric_limits<double>::quiet_NaN();
+
+  double CellMass = 0.0;
+  size_t NCell = static_cast<size_t>(SystemComponents.NumberofUnitCells.x) *
+                 static_cast<size_t>(SystemComponents.NumberofUnitCells.y) *
+                 static_cast<size_t>(SystemComponents.NumberofUnitCells.z);
+  for(size_t j = 0; j < static_cast<size_t>(SystemComponents.NComponents.y); j++)
+    CellMass += SystemComponents.MolecularWeight[j] * NCell;
+
+  return CellMass * 1.0e-3 / (Constants.Avogadro * volume * 1.0e-30);
+}
+
+static inline void ResetAdaptiveProductionState(Components& SystemComponents)
+{
+  SystemComponents.AdaptiveState = AdaptiveProductionState{};
+  SystemComponents.AdaptiveState.HenryStatus.assign(SystemComponents.NComponents.x, AdaptiveObservableStatus{});
+  SystemComponents.AdaptiveState.HeatStatus.assign(SystemComponents.NComponents.x, AdaptiveObservableStatus{});
+  for(size_t comp = 0; comp < static_cast<size_t>(SystemComponents.NComponents.x); comp++)
+  {
+    bool monitorHenry = comp < SystemComponents.AdaptiveTargets.size() && SystemComponents.AdaptiveTargets[comp].MonitorHenryCoefficient;
+    bool monitorHeat  = comp < SystemComponents.AdaptiveTargets.size() && SystemComponents.AdaptiveTargets[comp].MonitorHeatOfAdsorption;
+    SystemComponents.AdaptiveState.HenryStatus[comp].Enabled = monitorHenry;
+    SystemComponents.AdaptiveState.HeatStatus[comp].Enabled = monitorHeat;
+  }
+}
+
+static inline void InitializeProductionStatisticsStorage(Components& SystemComponents, size_t nblocks)
+{
+  SystemComponents.Nblock = nblocks;
+  SystemComponents.BookKeepEnergy.assign(nblocks, MoveEnergy{});
+  SystemComponents.BookKeepEnergy_SQ.assign(nblocks, MoveEnergy{});
+  SystemComponents.AverageEnergy = MoveEnergy{};
+  SystemComponents.AverageEnergy_Errorbar = MoveEnergy{};
+
+  std::vector<double> zeroDoubleBlocks(nblocks, 0.0);
+  SystemComponents.EnergyTimesNumberOfMolecule.assign(SystemComponents.NComponents.x, zeroDoubleBlocks);
+  SystemComponents.VolumeAverage.assign(nblocks, {0.0, 0.0});
+  SystemComponents.DensityPerComponent.assign(SystemComponents.NComponents.x, std::vector<double2>(nblocks, {0.0, 0.0}));
+  if(SystemComponents.AmountOfExcessMolecules.size() > 0)
+    SystemComponents.ExcessLoading.assign(SystemComponents.NComponents.x, std::vector<double2>(nblocks, {0.0, 0.0}));
+  else
+    SystemComponents.ExcessLoading.clear();
+
+  for(size_t comp = 0; comp < static_cast<size_t>(SystemComponents.NComponents.x); comp++)
+  {
+    Move_Statistics& MoveStats = SystemComponents.Moves[comp];
+    MoveStats.BlockID = 0;
+    MoveStats.MolAverage.assign(nblocks, {0.0, 0.0});
+    MoveStats.Rosen.assign(nblocks, RosenbluthWeight{});
+    MoveStats.MolSQPerComponent.assign(SystemComponents.NComponents.x, std::vector<double>(nblocks, 0.0));
+    MoveStats.WidomEnergy = MoveEnergy{};
+    MoveStats.WidomEnergy_ERR = MoveEnergy{};
+  }
+}
+
+static inline bool AdaptiveProductionEnabled(const Variables& Vars)
+{
+  return Vars.SimulationMode == PRODUCTION && Vars.AdaptiveProduction.Enabled;
+}
+
+static inline size_t AdaptiveBlockSize(size_t blockId, size_t totalCycles, size_t batchCycles)
+{
+  size_t blockStart = blockId * batchCycles;
+  if(blockStart >= totalCycles) return 0;
+  size_t remainingCycles = totalCycles - blockStart;
+  return std::min(batchCycles, remainingCycles);
+}
+
+static inline double StudentT95TwoSided(size_t degreesOfFreedom)
+{
+  static constexpr double t_table[] = {
+    0.0,
+    12.706, 4.303, 3.182, 2.776, 2.571,
+    2.447, 2.365, 2.306, 2.262, 2.228,
+    2.201, 2.179, 2.160, 2.145, 2.131,
+    2.120, 2.110, 2.101, 2.093, 2.086,
+    2.080, 2.074, 2.069, 2.064, 2.060,
+    2.056, 2.052, 2.048, 2.045, 2.042
+  };
+  if(degreesOfFreedom < sizeof(t_table) / sizeof(t_table[0]))
+    return t_table[degreesOfFreedom];
+  return 1.96;
+}
+
+static inline AdaptiveObservableStatus BuildAdaptiveObservableStatus(const std::vector<double>& estimates, const AdaptiveProductionSettings& Settings, double absoluteTolerance)
+{
+  AdaptiveObservableStatus Status;
+  Status.ValidBatches = estimates.size();
+  if(estimates.empty()) return Status;
+
+  double sum = 0.0;
+  double sqsum = 0.0;
+  for(double value : estimates)
+  {
+    sum += value;
+    sqsum += value * value;
+  }
+  Status.Mean = sum / static_cast<double>(estimates.size());
+  if(estimates.size() < 2) return Status;
+
+  double numerator = sqsum - sum * sum / static_cast<double>(estimates.size());
+  numerator = std::max(0.0, numerator);
+  double sampleVariance = numerator / static_cast<double>(estimates.size() - 1);
+  double standardError = std::sqrt(sampleVariance / static_cast<double>(estimates.size()));
+  Status.HalfWidth = StudentT95TwoSided(estimates.size() - 1) * standardError;
+  Status.RelativeHalfWidth = Status.HalfWidth / std::max(std::abs(Status.Mean), Settings.RelativeFloor);
+  Status.Available = std::isfinite(Status.HalfWidth) && std::isfinite(Status.RelativeHalfWidth);
+  if(!Status.Available) return Status;
+
+  bool relativeEnabled = Settings.RelativeTolerance > 0.0;
+  bool absoluteEnabled = absoluteTolerance >= 0.0;
+  bool hasCriterion = relativeEnabled || absoluteEnabled;
+  bool relativePass = relativeEnabled && Status.RelativeHalfWidth <= Settings.RelativeTolerance;
+  bool absolutePass = absoluteEnabled && Status.HalfWidth <= absoluteTolerance;
+
+  bool criteriaPassed = false;
+  if(hasCriterion && Settings.CriteriaMode == ADAPTIVE_CRITERIA_ALL)
+  {
+    criteriaPassed = true;
+    if(relativeEnabled) criteriaPassed = criteriaPassed && relativePass;
+    if(absoluteEnabled) criteriaPassed = criteriaPassed && absolutePass;
+  }
+  else if(hasCriterion)
+  {
+    criteriaPassed = relativePass || absolutePass;
+  }
+  Status.Passed = Status.ValidBatches >= Settings.MinimumBatches && criteriaPassed;
+  return Status;
+}
+
+static inline bool ComputeHenryEstimateForBlock(const Components& SystemComponents, const Units& Constants, const AdaptiveProductionSettings& Settings, size_t component, size_t blockId, size_t totalCycles, size_t batchCycles, double& henry)
+{
+  size_t cyclesInBlock = AdaptiveBlockSize(blockId, totalCycles, batchCycles);
+  if(cyclesInBlock == 0) return false;
+
+  const RosenbluthWeight& Rosen = SystemComponents.Moves[component].Rosen[blockId];
+  if(Rosen.Total.z < static_cast<double>(Settings.MinimumWidomSamples)) return false;
+
+  double averageWr = Rosen.Total.x / Rosen.Total.z;
+  if(!std::isfinite(averageWr) || averageWr <= 0.0) return false;
+
+  double averageVolume = SystemComponents.VolumeAverage[blockId].x / static_cast<double>(cyclesInBlock);
+  double rhoFramework = FrameworkDensityFromVolume(SystemComponents, averageVolume, Constants);
+  if(!std::isfinite(rhoFramework) || rhoFramework <= 0.0) return false;
+
+  henry = averageWr / (Constants.gas_constant * SystemComponents.Temperature * rhoFramework);
+  return std::isfinite(henry);
+}
+
+static inline bool ComputeHeatEstimateForBlock(Components& SystemComponents, const Units& Constants, size_t component, size_t blockId, size_t totalCycles, size_t batchCycles, double& heat)
+{
+  if(component < static_cast<size_t>(SystemComponents.NComponents.y)) return false;
+
+  size_t cyclesInBlock = AdaptiveBlockSize(blockId, totalCycles, batchCycles);
+  if(cyclesInBlock == 0) return false;
+
+  size_t NumberOfAdsorbateComponents = static_cast<size_t>(SystemComponents.NComponents.x - SystemComponents.NComponents.y);
+  if(NumberOfAdsorbateComponents == 0) return false;
+
+  double Average_E = SystemComponents.BookKeepEnergy[blockId].total();
+  Average_E -= SystemComponents.BookKeepEnergy[blockId].HHVDW;
+  Average_E -= SystemComponents.BookKeepEnergy[blockId].HHReal;
+  Average_E -= SystemComponents.BookKeepEnergy[blockId].HHEwaldE;
+  Average_E /= static_cast<double>(cyclesInBlock);
+
+  std::vector<std::vector<double>> matrix(NumberOfAdsorbateComponents, std::vector<double>(NumberOfAdsorbateComponents, 0.0));
+  std::vector<std::vector<double>> tempMatrix(NumberOfAdsorbateComponents, std::vector<double>(NumberOfAdsorbateComponents, 0.0));
+
+  for(size_t compi = static_cast<size_t>(SystemComponents.NComponents.y); compi < static_cast<size_t>(SystemComponents.NComponents.x); compi++)
+  {
+    for(size_t compj = static_cast<size_t>(SystemComponents.NComponents.y); compj < static_cast<size_t>(SystemComponents.NComponents.x); compj++)
+    {
+      size_t adjustCompi = compi - static_cast<size_t>(SystemComponents.NComponents.y);
+      size_t adjustCompj = compj - static_cast<size_t>(SystemComponents.NComponents.y);
+      double Average_N = SystemComponents.Moves[compi].MolAverage[blockId].x / static_cast<double>(cyclesInBlock);
+      double Average_Nj = SystemComponents.Moves[compj].MolAverage[blockId].x / static_cast<double>(cyclesInBlock);
+      double Average_NxNj = SystemComponents.Moves[compi].MolSQPerComponent[compj][blockId] / static_cast<double>(cyclesInBlock);
+      matrix[adjustCompi][adjustCompj] = Average_NxNj - Average_N * Average_Nj;
+    }
+  }
+  GaussJordan(matrix, tempMatrix);
+
+  size_t adjustedComponent = component - static_cast<size_t>(SystemComponents.NComponents.y);
+  heat = 0.0;
+  for(size_t compj = static_cast<size_t>(SystemComponents.NComponents.y); compj < static_cast<size_t>(SystemComponents.NComponents.x); compj++)
+  {
+    double Average_N = SystemComponents.Moves[compj].MolAverage[blockId].x / static_cast<double>(cyclesInBlock);
+    double Average_ExN = SystemComponents.EnergyTimesNumberOfMolecule[compj][blockId] / static_cast<double>(cyclesInBlock);
+    size_t adjustedCompj = compj - static_cast<size_t>(SystemComponents.NComponents.y);
+    double inverseVariance = matrix[adjustedCompj][adjustedComponent];
+    if(!std::isfinite(inverseVariance)) return false;
+    heat += Constants.energy_to_kelvin * (Average_ExN - Average_E * Average_N) * inverseVariance;
+  }
+
+  double kelvin_to_kjmol = 0.01 / Constants.energy_to_kelvin;
+  heat -= SystemComponents.Temperature;
+  heat *= kelvin_to_kjmol;
+  return std::isfinite(heat);
+}
+
+static inline void PrintAdaptiveConvergenceStatus(Components& SystemComponents, const AdaptiveProductionSettings& Settings)
+{
+  fprintf(SystemComponents.OUTPUT, "Adaptive convergence check: mode=%s, cycles=%zu, batches=%zu, consecutive_passes=%zu/%zu\n",
+          Settings.CriteriaMode == ADAPTIVE_CRITERIA_ALL ? "All" : "Any",
+          SystemComponents.AdaptiveState.CyclesCompleted,
+          SystemComponents.AdaptiveState.CompletedBlocks,
+          SystemComponents.AdaptiveState.ConsecutivePasses,
+          Settings.ConsecutivePasses);
+
+  for(size_t comp = static_cast<size_t>(SystemComponents.NComponents.y); comp < static_cast<size_t>(SystemComponents.NComponents.x); comp++)
+  {
+    if(comp < SystemComponents.AdaptiveState.HenryStatus.size() && SystemComponents.AdaptiveState.HenryStatus[comp].Enabled)
+    {
+      const AdaptiveObservableStatus& Status = SystemComponents.AdaptiveState.HenryStatus[comp];
+      fprintf(SystemComponents.OUTPUT,
+              "  Henry[%s]: valid_batches=%zu, mean=%.10g, halfwidth=%.10g, rel_halfwidth=%.10g, status=%s\n",
+              SystemComponents.MoleculeName[comp].c_str(),
+              Status.ValidBatches,
+              Status.Mean,
+              Status.HalfWidth,
+              Status.RelativeHalfWidth,
+              Status.Passed ? "pass" : "keep-running");
+    }
+    if(comp < SystemComponents.AdaptiveState.HeatStatus.size() && SystemComponents.AdaptiveState.HeatStatus[comp].Enabled)
+    {
+      const AdaptiveObservableStatus& Status = SystemComponents.AdaptiveState.HeatStatus[comp];
+      fprintf(SystemComponents.OUTPUT,
+              "  HeatOfAdsorption[%s]: valid_batches=%zu, mean=%.10g, halfwidth=%.10g, rel_halfwidth=%.10g, status=%s\n",
+              SystemComponents.MoleculeName[comp].c_str(),
+              Status.ValidBatches,
+              Status.Mean,
+              Status.HalfWidth,
+              Status.RelativeHalfWidth,
+              Status.Passed ? "pass" : "keep-running");
+    }
+  }
+}
+
+static inline bool EvaluateAdaptiveProduction(Variables& Vars, size_t systemId, size_t totalCycles)
+{
+  Components& SystemComponents = Vars.SystemComponents[systemId];
+  const AdaptiveProductionSettings& Settings = Vars.AdaptiveProduction;
+  size_t completedBlocks = CeilDivide(totalCycles, Settings.BatchCycles);
+
+  SystemComponents.AdaptiveState.CyclesCompleted = totalCycles;
+  SystemComponents.AdaptiveState.CompletedBlocks = completedBlocks;
+
+  bool hasTargets = false;
+  bool allTargetsPassed = true;
+  for(size_t comp = static_cast<size_t>(SystemComponents.NComponents.y); comp < static_cast<size_t>(SystemComponents.NComponents.x); comp++)
+  {
+    if(comp < SystemComponents.AdaptiveState.HenryStatus.size() && SystemComponents.AdaptiveState.HenryStatus[comp].Enabled)
+    {
+      hasTargets = true;
+      std::vector<double> estimates;
+      estimates.reserve(completedBlocks);
+      for(size_t blockId = 0; blockId < completedBlocks; blockId++)
+      {
+        double henry = 0.0;
+        if(ComputeHenryEstimateForBlock(SystemComponents, Vars.Constants, Settings, comp, blockId, totalCycles, Settings.BatchCycles, henry))
+          estimates.push_back(henry);
+      }
+      AdaptiveObservableStatus Status = BuildAdaptiveObservableStatus(estimates, Settings, Settings.HenryAbsoluteTolerance);
+      Status.Enabled = true;
+      SystemComponents.AdaptiveState.HenryStatus[comp] = Status;
+      allTargetsPassed = allTargetsPassed && Status.Passed;
+    }
+
+    if(comp < SystemComponents.AdaptiveState.HeatStatus.size() && SystemComponents.AdaptiveState.HeatStatus[comp].Enabled)
+    {
+      hasTargets = true;
+      std::vector<double> estimates;
+      estimates.reserve(completedBlocks);
+      for(size_t blockId = 0; blockId < completedBlocks; blockId++)
+      {
+        double heat = 0.0;
+        if(ComputeHeatEstimateForBlock(SystemComponents, Vars.Constants, comp, blockId, totalCycles, Settings.BatchCycles, heat))
+          estimates.push_back(heat);
+      }
+      AdaptiveObservableStatus Status = BuildAdaptiveObservableStatus(estimates, Settings, Settings.HeatAbsoluteTolerance);
+      Status.Enabled = true;
+      SystemComponents.AdaptiveState.HeatStatus[comp] = Status;
+      allTargetsPassed = allTargetsPassed && Status.Passed;
+    }
+  }
+
+  if(!hasTargets)
+    throw std::runtime_error("Adaptive production is enabled, but no components requested MonitorHenryCoefficient or MonitorHeatOfAdsorption");
+
+  if(totalCycles >= static_cast<size_t>(Vars.NumberOfProductionCycles) && allTargetsPassed)
+    SystemComponents.AdaptiveState.ConsecutivePasses++;
+  else
+    SystemComponents.AdaptiveState.ConsecutivePasses = 0;
+
+  SystemComponents.AdaptiveState.Converged = SystemComponents.AdaptiveState.ConsecutivePasses >= Settings.ConsecutivePasses;
+  PrintAdaptiveConvergenceStatus(SystemComponents, Settings);
+  return SystemComponents.AdaptiveState.Converged;
+}
+
+static inline void PrintAdaptiveProductionSummary(Components& SystemComponents, const AdaptiveProductionSettings& Settings)
+{
+  fprintf(SystemComponents.OUTPUT, "=====================ADAPTIVE PRODUCTION SUMMARY=====================\n");
+  fprintf(SystemComponents.OUTPUT, "Adaptive Production: %s\n", Settings.Enabled ? "enabled" : "disabled");
+  if(Settings.Enabled)
+  {
+    fprintf(SystemComponents.OUTPUT, "Criteria Mode: %s\n", Settings.CriteriaMode == ADAPTIVE_CRITERIA_ALL ? "All" : "Any");
+    fprintf(SystemComponents.OUTPUT, "Cycles Completed: %zu\n", SystemComponents.AdaptiveState.CyclesCompleted);
+    fprintf(SystemComponents.OUTPUT, "Batches Completed: %zu (batch size: %zu cycles)\n", SystemComponents.AdaptiveState.CompletedBlocks, Settings.BatchCycles);
+    fprintf(SystemComponents.OUTPUT, "Converged: %s\n", SystemComponents.AdaptiveState.Converged ? "yes" : "no");
+    fprintf(SystemComponents.OUTPUT, "Stop Reason: %s\n", SystemComponents.AdaptiveState.StopReason.c_str());
+    for(size_t comp = static_cast<size_t>(SystemComponents.NComponents.y); comp < static_cast<size_t>(SystemComponents.NComponents.x); comp++)
+    {
+      if(comp < SystemComponents.AdaptiveState.HenryStatus.size() && SystemComponents.AdaptiveState.HenryStatus[comp].Enabled)
+      {
+        const AdaptiveObservableStatus& Status = SystemComponents.AdaptiveState.HenryStatus[comp];
+        fprintf(SystemComponents.OUTPUT,
+                "Henry[%s]: valid_batches=%zu, mean=%.10g, halfwidth=%.10g, rel_halfwidth=%.10g, passed=%s\n",
+                SystemComponents.MoleculeName[comp].c_str(),
+                Status.ValidBatches,
+                Status.Mean,
+                Status.HalfWidth,
+                Status.RelativeHalfWidth,
+                Status.Passed ? "yes" : "no");
+      }
+      if(comp < SystemComponents.AdaptiveState.HeatStatus.size() && SystemComponents.AdaptiveState.HeatStatus[comp].Enabled)
+      {
+        const AdaptiveObservableStatus& Status = SystemComponents.AdaptiveState.HeatStatus[comp];
+        fprintf(SystemComponents.OUTPUT,
+                "HeatOfAdsorption[%s]: valid_batches=%zu, mean=%.10g, halfwidth=%.10g, rel_halfwidth=%.10g, passed=%s\n",
+                SystemComponents.MoleculeName[comp].c_str(),
+                Status.ValidBatches,
+                Status.Mean,
+                Status.HalfWidth,
+                Status.RelativeHalfWidth,
+                Status.Passed ? "yes" : "no");
+      }
+    }
+  }
+  fprintf(SystemComponents.OUTPUT, "========================================================================\n");
+}
+
 ///////////////////////////////////////////////////////////
 // Wrapper for Performing a move for the selected system //
 ///////////////////////////////////////////////////////////
@@ -479,7 +828,38 @@ void InitialMCBeforeMoves(Variables& Vars, size_t systemId)
   {
     case INITIALIZATION: {Mode = "INITIALIZATION"; fprintf(SystemComponents.OUTPUT, "== RUNNING INITIALIZATION PHASE ==\n"); Cycles = Vars.NumberOfInitializationCycles; break;}
     case EQUILIBRATION:  {Mode = "EQUILIBRATION";  fprintf(SystemComponents.OUTPUT, "== RUNNING EQUILIBRATION PHASE ==\n");  Cycles = Vars.NumberOfEquilibrationCycles; break;}
-    case PRODUCTION:     {Mode = "PRODUCTION";     fprintf(SystemComponents.OUTPUT, "==  RUNNING PRODUCTION PHASE   ==\n");     Cycles = Vars.NumberOfProductionCycles; break;}
+    case PRODUCTION:
+    {
+      Mode = "PRODUCTION";
+      fprintf(SystemComponents.OUTPUT, "==  RUNNING PRODUCTION PHASE   ==\n");
+      if(AdaptiveProductionEnabled(Vars))
+      {
+        if(Vars.RunTogether)
+          throw std::runtime_error("Adaptive production is currently supported only for one-box-at-a-time production runs");
+        if(Vars.AdaptiveProduction.MaximumCycles == 0)
+          Vars.AdaptiveProduction.MaximumCycles = static_cast<size_t>(Vars.NumberOfProductionCycles);
+        if(Vars.AdaptiveProduction.BatchCycles == 0)
+          Vars.AdaptiveProduction.BatchCycles = CeilDivide(std::max(1, Vars.NumberOfProductionCycles), std::max<size_t>(1, SystemComponents.ConfiguredNblock));
+        if(Vars.AdaptiveProduction.MaximumCycles < static_cast<size_t>(Vars.NumberOfProductionCycles))
+          throw std::runtime_error("MaximumProductionCycles must be greater than or equal to NumberOfProductionCycles when adaptive production is enabled");
+        if(Vars.AdaptiveProduction.BatchCycles == 0)
+          throw std::runtime_error("AdaptiveBatchCycles must be greater than ZERO");
+        if(Vars.AdaptiveProduction.MinimumBatches == 0)
+          throw std::runtime_error("AdaptiveMinimumBatches must be greater than ZERO");
+        if(Vars.AdaptiveProduction.ConsecutivePasses == 0)
+          throw std::runtime_error("AdaptiveConsecutivePasses must be greater than ZERO");
+        if(Vars.AdaptiveProduction.RelativeTolerance <= 0.0 &&
+           Vars.AdaptiveProduction.HenryAbsoluteTolerance < 0.0 &&
+           Vars.AdaptiveProduction.HeatAbsoluteTolerance < 0.0)
+          throw std::runtime_error("Adaptive production needs either AdaptiveRelativeTolerance or an absolute tolerance for Henry/Heat");
+        Cycles = CheckedSizeToInt(Vars.AdaptiveProduction.MaximumCycles, "MaximumProductionCycles");
+      }
+      else
+      {
+        Cycles = Vars.NumberOfProductionCycles;
+      }
+      break;
+    }
   }
   fprintf(SystemComponents.OUTPUT, "==================================\n");
 
@@ -497,19 +877,52 @@ void InitialMCBeforeMoves(Variables& Vars, size_t systemId)
 
   if(SimulationMode == PRODUCTION)
   {
-    BlockAverageSize = Cycles / SystemComponents.Nblock;
-    if(Cycles % SystemComponents.Nblock != 0)
-      fprintf(SystemComponents.OUTPUT, "Warning! Number of Cycles cannot be divided by Number of blocks. Residue values go to the last block\n");
-    SystemComponents.BookKeepEnergy.resize(SystemComponents.Nblock);
-    SystemComponents.BookKeepEnergy_SQ.resize(SystemComponents.Nblock);
-    //Initialize vectors for energy * N for each component//
-    //initialize for each component, start with zero//
-    std::vector<double>FILL(SystemComponents.Nblock, 0.0);
-    SystemComponents.EnergyTimesNumberOfMolecule.resize(SystemComponents.NComponents.x, FILL);
-    SystemComponents.VolumeAverage.resize(SystemComponents.Nblock, {0.0, 0.0});
-    SystemComponents.DensityPerComponent.resize(SystemComponents.NComponents.x, std::vector<double2>(SystemComponents.Nblock, {0.0, 0.0}));
-    if(SystemComponents.AmountOfExcessMolecules.size() > 0)
-      SystemComponents.ExcessLoading.resize(SystemComponents.NComponents.x, std::vector<double2>(SystemComponents.Nblock, {0.0, 0.0}));
+    if(AdaptiveProductionEnabled(Vars))
+    {
+      bool hasAdaptiveTarget = false;
+      for(size_t comp = static_cast<size_t>(SystemComponents.NComponents.y); comp < static_cast<size_t>(SystemComponents.NComponents.x); comp++)
+      {
+        if(comp < SystemComponents.AdaptiveTargets.size() && SystemComponents.AdaptiveTargets[comp].MonitorHenryCoefficient)
+        {
+          hasAdaptiveTarget = true;
+          if(Vars.AdaptiveProduction.RelativeTolerance <= 0.0 && Vars.AdaptiveProduction.HenryAbsoluteTolerance < 0.0)
+            throw std::runtime_error("MonitorHenryCoefficient requires AdaptiveRelativeTolerance or AdaptiveAbsoluteToleranceHenry");
+          if(SystemComponents.Moves[comp].WidomProb < 1e-10)
+            throw std::runtime_error("MonitorHenryCoefficient requires a non-zero WidomProbability for the same component");
+        }
+        if(comp < SystemComponents.AdaptiveTargets.size() && SystemComponents.AdaptiveTargets[comp].MonitorHeatOfAdsorption)
+        {
+          hasAdaptiveTarget = true;
+          if(Vars.AdaptiveProduction.RelativeTolerance <= 0.0 && Vars.AdaptiveProduction.HeatAbsoluteTolerance < 0.0)
+            throw std::runtime_error("MonitorHeatOfAdsorption requires AdaptiveRelativeTolerance or AdaptiveAbsoluteToleranceHeat");
+        }
+      }
+      if(!hasAdaptiveTarget)
+        throw std::runtime_error("Adaptive production is enabled, but no adaptive observables were requested in component blocks");
+
+      size_t adaptiveBlocks = CeilDivide(static_cast<size_t>(Cycles), Vars.AdaptiveProduction.BatchCycles);
+      BlockAverageSize = CheckedSizeToInt(Vars.AdaptiveProduction.BatchCycles, "AdaptiveBatchCycles");
+      InitializeProductionStatisticsStorage(SystemComponents, adaptiveBlocks);
+      ResetAdaptiveProductionState(SystemComponents);
+      fprintf(SystemComponents.OUTPUT,
+              "Adaptive production enabled: minimum cycles=%d, maximum cycles=%d, batch cycles=%d, allocated batches=%zu\n",
+              Vars.NumberOfProductionCycles,
+              Cycles,
+              BlockAverageSize,
+              adaptiveBlocks);
+    }
+    else
+    {
+      size_t requestedBlocks = std::max<size_t>(1, SystemComponents.ConfiguredNblock);
+      size_t usableBlocks = std::min(requestedBlocks, static_cast<size_t>(std::max(1, Cycles)));
+      if(usableBlocks != requestedBlocks)
+        fprintf(SystemComponents.OUTPUT, "Warning! Number of production cycles is smaller than NumberOfBlocks. Reducing block count from %zu to %zu\n", requestedBlocks, usableBlocks);
+      BlockAverageSize = std::max(1, Cycles / CheckedSizeToInt(usableBlocks, "NumberOfBlocks"));
+      if(Cycles % CheckedSizeToInt(usableBlocks, "NumberOfBlocks") != 0)
+        fprintf(SystemComponents.OUTPUT, "Warning! Number of Cycles cannot be divided by Number of blocks. Residue values go to the last block\n");
+      InitializeProductionStatisticsStorage(SystemComponents, usableBlocks);
+      SystemComponents.AdaptiveState = AdaptiveProductionState{};
+    }
   }
 
   /////////////////////////////////////////////
@@ -563,7 +976,11 @@ inline void MCEndOfPhaseSummary(Variables& Vars)
       if(Vars.SimulationMode == EQUILIBRATION) fprintf(SystemComponents[sim].OUTPUT, "Sampled %zu WangLandau, Adjusted WL %zu times\n", SystemComponents[sim].WLSampled, SystemComponents[sim].WLAdjusted);
       PrintAllStatistics(SystemComponents[sim], Sims[sim], Cycles, Vars.SimulationMode, Vars.BlockAverageSize, Constants);
       if(Vars.SimulationMode == PRODUCTION)
+      {
         Calculate_Overall_Averages_MoveEnergy(SystemComponents[sim], Vars.BlockAverageSize, Cycles);
+        if(Vars.AdaptiveProduction.Enabled)
+          PrintAdaptiveProductionSummary(SystemComponents[sim], Vars.AdaptiveProduction);
+      }
     }
     PrintSystemMoves(Vars);
   }
@@ -592,6 +1009,9 @@ size_t Determine_Number_Of_Steps(Variables& Vars, size_t systemId, size_t curren
 
 void Run_Simulation_MultipleBoxes(Variables& Vars)
 {
+  if(AdaptiveProductionEnabled(Vars))
+    throw std::runtime_error("Adaptive production is currently unsupported when simulations are run together");
+
   std::vector<Components>&   SystemComponents = Vars.SystemComponents;
   size_t NumberOfSimulations = SystemComponents.size();
 
@@ -627,6 +1047,9 @@ void Run_Simulation_MultipleBoxes(Variables& Vars)
 void Run_Simulation_ForOneBox(Variables& Vars, size_t box_index)
 {
   InitialMCBeforeMoves(Vars, box_index);
+  Components& SystemComponents = Vars.SystemComponents[box_index];
+  bool adaptiveProduction = AdaptiveProductionEnabled(Vars);
+  size_t cyclesCompleted = 0;
 
   for(size_t i = 0; i < Vars.Cycles; i++)
   {
@@ -636,6 +1059,33 @@ void Run_Simulation_ForOneBox(Variables& Vars, size_t box_index)
       RunMoves(Vars, box_index, i);
     }
     GatherStatisticsDuringSimulation(Vars, box_index, i);
+    cyclesCompleted = i + 1;
+
+    if(adaptiveProduction)
+    {
+      bool completedBatch = (cyclesCompleted % Vars.AdaptiveProduction.BatchCycles) == 0;
+      bool reachedMaximumCycles = cyclesCompleted == static_cast<size_t>(Vars.Cycles);
+      if(completedBatch || reachedMaximumCycles)
+      {
+        bool converged = EvaluateAdaptiveProduction(Vars, box_index, cyclesCompleted);
+        if(converged)
+        {
+          SystemComponents.AdaptiveState.StopReason = "Convergence criteria satisfied";
+          break;
+        }
+        if(reachedMaximumCycles)
+          SystemComponents.AdaptiveState.StopReason = "Reached MaximumProductionCycles before satisfying convergence criteria";
+      }
+    }
+  }
+
+  if(adaptiveProduction)
+  {
+    size_t usedBlocks = cyclesCompleted > 0 ? CeilDivide(cyclesCompleted, Vars.AdaptiveProduction.BatchCycles) : 0;
+    SystemComponents.Nblock = usedBlocks;
+    Vars.Cycles = CheckedSizeToInt(cyclesCompleted, "completed production cycles");
+    if(SystemComponents.AdaptiveState.StopReason.empty())
+      SystemComponents.AdaptiveState.StopReason = "Production phase finished";
   }
   MCEndOfPhaseSummary(Vars);
 }

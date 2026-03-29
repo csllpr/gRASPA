@@ -169,30 +169,30 @@ inline MoveEnergy SingleBody_Calculation(Variables& Vars, size_t systemId)
   if(Atomsize != 0)
   {
     Calculate_Single_Body_Energy_VDWReal<<<Total_Nblock, Nthread, Nthread * 2 * sizeof(double)>>>(Sims.Box, Sims.d_a, Sims.Old, Sims.New, FF, Sims.Blocksum, SelectedComponent, Atomsize, Molsize, Sims.device_flag, NBlocks, Do_New, Do_Old, SystemComponents.NComponents);
-
-    SystemComponents.flag = Sims.device_flag;
     cudaDeviceSynchronize();
+    CopyDeviceFlagsToHost(SystemComponents, Sims, 1);
   }
   MoveEnergy tot; 
   if(!SystemComponents.flag[0] || !CheckOverlap)
   {
+    CopyBlocksumToHost(SystemComponents, Sims, 2 * Total_Nblock);
     //VDW Part and Real Part Coulomb//
     for(size_t i = 0; i < HH_Nblock; i++) 
     {
-      tot.HHVDW += Sims.Blocksum[i];
-      tot.HHReal+= Sims.Blocksum[i + Total_Nblock];
+      tot.HHVDW += SystemComponents.host_array[i];
+      tot.HHReal+= SystemComponents.host_array[i + Total_Nblock];
       //if(MoveType == SPECIAL_ROTATION) printf("HH Block %zu, VDW: %.5f, Real: %.5f\n", i, BlockResult[i], BlockResult[i + Total_Nblock]);
     }
     for(size_t i = HH_Nblock; i < HH_Nblock + HG_Nblock; i++) 
     {
-      tot.HGVDW += Sims.Blocksum[i];
-      tot.HGReal+= Sims.Blocksum[i + Total_Nblock];
+      tot.HGVDW += SystemComponents.host_array[i];
+      tot.HGReal+= SystemComponents.host_array[i + Total_Nblock];
       //printf("HG Block %zu, VDW: %.5f, Real: %.5f\n", i, BlockResult[i], BlockResult[i + Total_Nblock]);
     }
     for(size_t i = HH_Nblock + HG_Nblock; i < Total_Nblock; i++)
     {
-      tot.GGVDW += Sims.Blocksum[i];
-      tot.GGReal+= Sims.Blocksum[i + Total_Nblock];
+      tot.GGVDW += SystemComponents.host_array[i];
+      tot.GGReal+= SystemComponents.host_array[i + Total_Nblock];
       //printf("GG Block %zu, VDW: %.5f, Real: %.5f\n", i, BlockResult[i], BlockResult[i + Total_Nblock]);
     }
 

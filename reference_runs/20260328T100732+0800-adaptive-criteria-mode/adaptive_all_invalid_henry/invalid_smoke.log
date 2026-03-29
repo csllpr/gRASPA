@@ -1,0 +1,582 @@
+/home/csllpr/source/gRASPA/src_clean/nvc_main.x------------------GENERAL SIMULATION SETUP-------------
+Finished Checking Number of Components, There are 1 framework, 1 Adsorbates, 2 total Components
+DONE Reading Model Info from simulation.input file
+Setting Maximum Number of Steps for a Cycle, Max Step = 1
+Adaptive production is enabled
+Criteria Mode: All, Maximum Production Cycles: 200, Batch Cycles: 50, Minimum Batches: 2, Consecutive Passes: 1
+-------------------------------------------------------
+device_random[0] = 2.30000 4.50000 6.70000
+================FUGACITY COEFFICIENT CALCULATION================
+Checking: Current Fugacity Coeff for 1 component: 1.00000
+Every Adsorbate Component has fugacity coefficient assigned, skip EOS calculation!
+----------------- MEMORY ALLOCAION STATUS -----------------
+System allocate_sizes are: 2430, 10240
+Component allocate_sizes are: 2430, 10240
+Allocated Blocksum size: 16001, vdw_real size: 16001, fourier_size: 0
+------------------------------------------------------------
+------------------- SIMULATION BOX PARAMETERS -----------------
+Pressure:        0.06022
+Box Volume:      60603.00368
+Box Beta:        0.00384
+Box Temperature: 313.00000
+---------------------------------------------------------------
+======================== CALCULATING INITIAL STAGE ENERGY ========================
+****** Calculating VDW + Real Energy (CPU) ******
+Host-Host   VDW: 0.00000; Real: 0.00000
+Host-Guest  VDW: 0.00000; Real: 0.00000
+Guest-Guest VDW: 0.00000; Real: 0.00000
+********** PRINTING COMPONENT ENERGIES**********
+Compoent [0-0], VDW: 0.00000, Real: 0.00000
+Compoent [0-1], VDW: 0.00000, Real: 0.00000
+Compoent [1-1], VDW: 0.00000, Real: 0.00000
+****** Calculating Ewald Energy (CPU) ******
+CPU Guest-Guest Fourier: 0.00000, Host-Host Fourier: 44714.15321, Framework-Guest Fourier: 0.00000
+Component: 0, SelfAtomE: 19974912.89818 (24024312.82741 kJ/mol)
+Component: 1, SelfAtomE: 0.00000 (0.00000 kJ/mol)
+Component: 0, Intra-Molecular ExclusionE: 19382380.03079 (23311659.15831 kJ/mol)
+Component: 1, Intra-Molecular ExclusionE: 0.00000 (0.00000 kJ/mol)
+HostEwald took 0.25239 sec
+Ewald Summation (total energy) on the CPU took 0.25240 secs
+Component 0, Intra Exclusion Energy: -19382380.03079 (-23311659.15831 kJ/mol)
+Component 0, Atom Self Exclusion Energy: 19974912.89818 (24024312.82741 kJ/mol)
+DEBUG: comp: 0, IntraE: -19382380.03079, SelfE: 19974912.89818
+Component 1, Intra Exclusion Energy: -12971.30320 (-15600.90136 kJ/mol)
+Component 1, Atom Self Exclusion Energy: 12993.77350 (15627.92694 kJ/mol)
+DEBUG: comp: 1, IntraE: -12971.30320, SelfE: 12993.77350
+******   Allocating Ewald WaveVectors + StructureFactors (INITIAL STAGE ONLY)   ******
+Allocated 87480 116640 97200 space for eikxyz
+Structure Factor 0 is 0.00000 0.00000
+Structure Factor 1 is 0.00000 0.00000
+Structure Factor 2 is 0.00000 0.00000
+Structure Factor 3 is 0.00000 0.00000
+Structure Factor 4 is 0.00000 0.00000
+Structure Factor 5 is 0.00000 0.00000
+Structure Factor 6 is 0.00000 0.00000
+Structure Factor 7 is 0.00000 0.00000
+Structure Factor 8 is 0.00000 0.00000
+Structure Factor 9 is 0.00000 0.00000
+****** DONE Allocating Ewald WaveVectors + StructureFactors(INITIAL STAGE ONLY) ******
+ ****** CHECKING StructureFactors (SF) Stored on CPU vs. GPU ****** 
+CPU SF: 3933, GPU SF: 3933
+StructureFactor 0, CPU: 0.00000 0.00000, GPU: 0.00000 0.00000
+StructureFactor 1, CPU: 0.00000 0.00000, GPU: 0.00000 0.00000
+StructureFactor 2, CPU: 0.00000 0.00000, GPU: 0.00000 0.00000
+StructureFactor 3, CPU: 0.00000 0.00000, GPU: 0.00000 0.00000
+StructureFactor 4, CPU: 0.00000 0.00000, GPU: 0.00000 0.00000
+StructureFactor 5, CPU: 0.00000 0.00000, GPU: 0.00000 0.00000
+StructureFactor 6, CPU: 0.00000 0.00000, GPU: 0.00000 0.00000
+StructureFactor 7, CPU: 0.00000 0.00000, GPU: 0.00000 0.00000
+StructureFactor 8, CPU: 0.00000 0.00000, GPU: 0.00000 0.00000
+StructureFactor 9, CPU: 0.00000 0.00000, GPU: 0.00000 0.00000
+ ****** CHECKING Framework StructureFactors Stored on CPU ****** 
+Framework Structure Factor 0, real: 0.00000 imag: 0.00000
+Framework Structure Factor 1, real: 0.00000 imag: 0.00000
+Framework Structure Factor 2, real: 0.00000 imag: 0.00000
+Framework Structure Factor 3, real: 0.00000 imag: 0.00000
+Framework Structure Factor 4, real: 0.00000 imag: 0.00000
+Framework Structure Factor 5, real: 0.00000 imag: 0.00000
+Framework Structure Factor 6, real: -0.00000 imag: 0.00000
+Framework Structure Factor 7, real: 0.00000 imag: 0.00000
+Framework Structure Factor 8, real: -0.00000 imag: 0.00000
+Framework Structure Factor 9, real: 0.00000 imag: 0.00000
+VDW + Real on the GPU took 0.00000 secs
+Ewald Summation (total energy) on the GPU took 0.00164 secs
+Total GPU Energy: 
+====================== DONE CALCULATING INITIAL STAGE ENERGY ======================
+Component 1, Need to create 0 full molecule
+======================== CALCULATING CREATE_MOLECULE STAGE ENERGY ========================
+****** Calculating VDW + Real Energy (CPU) ******
+Host-Host   VDW: 0.00000; Real: 0.00000
+Host-Guest  VDW: 0.00000; Real: 0.00000
+Guest-Guest VDW: 0.00000; Real: 0.00000
+********** PRINTING COMPONENT ENERGIES**********
+Compoent [0-0], VDW: 0.00000, Real: 0.00000
+Compoent [0-1], VDW: 0.00000, Real: 0.00000
+Compoent [1-1], VDW: 0.00000, Real: 0.00000
+****** Calculating Ewald Energy (CPU) ******
+CPU Guest-Guest Fourier: 0.00000, Host-Host Fourier: 44714.15321, Framework-Guest Fourier: 0.00000
+Component: 0, SelfAtomE: 19974912.89818 (24024312.82741 kJ/mol)
+Component: 1, SelfAtomE: 0.00000 (0.00000 kJ/mol)
+Component: 0, Intra-Molecular ExclusionE: 19382380.03079 (23311659.15831 kJ/mol)
+Component: 1, Intra-Molecular ExclusionE: 0.00000 (0.00000 kJ/mol)
+HostEwald took 0.25000 sec
+Ewald Summation (total energy) on the CPU took 0.25001 secs
+ ****** CHECKING StructureFactors (SF) Stored on CPU vs. GPU ****** 
+CPU SF: 3933, GPU SF: 3933
+StructureFactor 0, CPU: 0.00000 0.00000, GPU: 0.00000 0.00000
+StructureFactor 1, CPU: 0.00000 0.00000, GPU: 0.00000 0.00000
+StructureFactor 2, CPU: 0.00000 0.00000, GPU: 0.00000 0.00000
+StructureFactor 3, CPU: 0.00000 0.00000, GPU: 0.00000 0.00000
+StructureFactor 4, CPU: 0.00000 0.00000, GPU: 0.00000 0.00000
+StructureFactor 5, CPU: 0.00000 0.00000, GPU: 0.00000 0.00000
+StructureFactor 6, CPU: 0.00000 0.00000, GPU: 0.00000 0.00000
+StructureFactor 7, CPU: 0.00000 0.00000, GPU: 0.00000 0.00000
+StructureFactor 8, CPU: 0.00000 0.00000, GPU: 0.00000 0.00000
+StructureFactor 9, CPU: 0.00000 0.00000, GPU: 0.00000 0.00000
+ ****** CHECKING Framework StructureFactors Stored on CPU ****** 
+Framework Structure Factor 0, real: 0.00000 imag: 0.00000
+Framework Structure Factor 1, real: 0.00000 imag: 0.00000
+Framework Structure Factor 2, real: 0.00000 imag: 0.00000
+Framework Structure Factor 3, real: 0.00000 imag: 0.00000
+Framework Structure Factor 4, real: 0.00000 imag: 0.00000
+Framework Structure Factor 5, real: 0.00000 imag: 0.00000
+Framework Structure Factor 6, real: -0.00000 imag: 0.00000
+Framework Structure Factor 7, real: 0.00000 imag: 0.00000
+Framework Structure Factor 8, real: -0.00000 imag: 0.00000
+Framework Structure Factor 9, real: 0.00000 imag: 0.00000
+VDW + Real on the GPU took 0.00000 secs
+Ewald Summation (total energy) on the GPU took 0.00152 secs
+Total GPU Energy: 
+====================== DONE CALCULATING CREATE_MOLECULE STAGE ENERGY ======================
+Running Simulation Boxes in SERIAL, currently [0] box; pres: 1000000.00000 [Pa], temp: 313.00000 [K]
+==================================
+== RUNNING INITIALIZATION PHASE ==
+==================================
+CBMC Uses 10 trial positions and 10 trial orientations
+Box 0, Volume: 60603.00368
+Total Volume: 60603.00368
+===============================
+== INITIALIZATION PHASE ENDS ==
+===============================
+Running Simulation Boxes in SERIAL, currently [0] box; pres: 1000000.00000 [Pa], temp: 313.00000 [K]
+==================================
+== RUNNING EQUILIBRATION PHASE ==
+==================================
+CBMC Uses 10 trial positions and 10 trial orientations
+===============================
+== EQUILIBRATION PHASE ENDS ==
+===============================
+Running Simulation Boxes in SERIAL, currently [0] box; pres: 1000000.00000 [Pa], temp: 313.00000 [K]
+==================================
+==  RUNNING PRODUCTION PHASE   ==
+==================================
+CBMC Uses 10 trial positions and 10 trial orientations
+terminate called after throwing an instance of 'std::runtime_error'
+  what():  MonitorHenryCoefficient requires AdaptiveRelativeTolerance or AdaptiveAbsoluteToleranceHenry
+Error: abort
+rax    	                 0	               0
+rbx    	     0xbc7952f1000	  12951829286912
+rcx    	     0xbc7918969fc	  12951768099324
+rdx    	               0x6	               6
+rsi    	           0x2a555	          173397
+rdi    	           0x2a555	          173397
+rbp    	           0x2a555	          173397
+rsp    	    0x7ffc3791f7a0	 140721240799136
+r8     	    0x7ffc3791f870	 140721240799344
+r9     	    0x7ffc3791f3b0	 140721240798128
+r10    	               0x8	               8
+r11    	             0x246	             582
+r12    	               0x6	               6
+r13    	              0x16	              22
+r14    	              0x10	              16
+r15    	                 0	               0
+rip    	     0xbc7918969fc	  12951768099324
+eflags 	             0x246	             582 [ PF ZF IF ]
+error  	                 0	               0
+trapno 	                 0	               0
+
+k0	        0xfef00000
+k1	               0x3
+k2	           0x1ffff
+k3	                 0
+k4	                 0
+k5	                 0
+k6	                 0
+k7	                 0
+
+zmm0 :	 00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000bc7_91a1b723_00000bc7_91a1b723
+	        0        0        0        0	(float)
+	        0        0        0        0	
+	        0        0        0        0	
+	 4.22e-42 -2.55e-28 4.22e-42 -2.55e-28	
+	                 0                 0	(double)
+	                 0                 0	
+	                 0                 0	
+	      6.39902e-311      6.39902e-311	
+zmm1 :	 00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_ffffffff_ffffffff
+	        0        0        0        0	(float)
+	        0        0        0        0	
+	        0        0        0        0	
+	        0        0     -nan     -nan	
+	                 0                 0	(double)
+	                 0                 0	
+	                 0                 0	
+	                 0              -nan	
+zmm2 :	 00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000bc7_939d6ad4_00000bc7_9568b560
+	        0        0        0        0	(float)
+	        0        0        0        0	
+	        0        0        0        0	
+	 4.22e-42 -3.97e-27 4.22e-42 -4.7e-26	
+	                 0                 0	(double)
+	                 0                 0	
+	                 0                 0	
+	      6.39904e-311      6.39906e-311	
+zmm3 :	 00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000bc7_938ae4e0_00000000_00000000
+	        0        0        0        0	(float)
+	        0        0        0        0	
+	        0        0        0        0	
+	 4.22e-42 -3.51e-27        0        0	
+	                 0                 0	(double)
+	                 0                 0	
+	                 0                 0	
+	      6.39904e-311                 0	
+zmm4 :	 00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_40000000_00000000
+	        0        0        0        0	(float)
+	        0        0        0        0	
+	        0        0        0        0	
+	        0        0        2        0	
+	                 0                 0	(double)
+	                 0                 0	
+	                 0                 0	
+	                 0                 2	
+zmm5 :	 00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	        0        0        0        0	(float)
+	        0        0        0        0	
+	        0        0        0        0	
+	        0        0        0        0	
+	                 0                 0	(double)
+	                 0                 0	
+	                 0                 0	
+	                 0                 0	
+zmm6 :	 00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	        0        0        0        0	(float)
+	        0        0        0        0	
+	        0        0        0        0	
+	        0        0        0        0	
+	                 0                 0	(double)
+	                 0                 0	
+	                 0                 0	
+	                 0                 0	
+zmm7 :	 00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000bc7_93a2b8c0_00000bc7_93800000
+	        0        0        0        0	(float)
+	        0        0        0        0	
+	        0        0        0        0	
+	 4.22e-42 -4.11e-27 4.22e-42 -3.23e-27	
+	                 0                 0	(double)
+	                 0                 0	
+	                 0                 0	
+	      6.39904e-311      6.39904e-311	
+zmm8 :	 00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	        0        0        0        0	(float)
+	        0        0        0        0	
+	        0        0        0        0	
+	        0        0        0        0	
+	                 0                 0	(double)
+	                 0                 0	
+	                 0                 0	
+	                 0                 0	
+zmm9 :	 00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	        0        0        0        0	(float)
+	        0        0        0        0	
+	        0        0        0        0	
+	        0        0        0        0	
+	                 0                 0	(double)
+	                 0                 0	
+	                 0                 0	
+	                 0                 0	
+zmm10:	 00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_401921fb_54442d18
+	        0        0        0        0	(float)
+	        0        0        0        0	
+	        0        0        0        0	
+	        0        0     2.39 3.37e+12	
+	                 0                 0	(double)
+	                 0                 0	
+	                 0                 0	
+	                 0           6.28319	
+zmm11:	 00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_80000000_00000000_80000000_00000000
+	        0        0        0        0	(float)
+	        0        0        0        0	
+	        0        0        0        0	
+	       -0        0       -0        0	
+	                 0                 0	(double)
+	                 0                 0	
+	                 0                 0	
+	                -0                -0	
+zmm12:	 00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_3ff00000_00000000
+	        0        0        0        0	(float)
+	        0        0        0        0	
+	        0        0        0        0	
+	        0        0     1.88        0	
+	                 0                 0	(double)
+	                 0                 0	
+	                 0                 0	
+	                 0                 1	
+zmm13:	 00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_40260000_00000000
+	        0        0        0        0	(float)
+	        0        0        0        0	
+	        0        0        0        0	
+	        0        0     2.59        0	
+	                 0                 0	(double)
+	                 0                 0	
+	                 0                 0	
+	                 0                11	
+zmm14:	 00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_3ff00000_00000000
+	        0        0        0        0	(float)
+	        0        0        0        0	
+	        0        0        0        0	
+	        0        0     1.88        0	
+	                 0                 0	(double)
+	                 0                 0	
+	                 0                 0	
+	                 0                 1	
+zmm15:	 00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_40d143a6_9e1ff792
+	        0        0        0        0	(float)
+	        0        0        0        0	
+	        0        0        0        0	
+	        0        0     6.54 -8.47e-21	
+	                 0                 0	(double)
+	                 0                 0	
+	                 0                 0	
+	                 0           17678.6	
+zmm16:	 00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	        0        0        0        0	(float)
+	        0        0        0        0	
+	        0        0        0        0	
+	        0        0        0        0	
+	                 0                 0	(double)
+	                 0                 0	
+	                 0                 0	
+	                 0                 0	
+zmm17:	 00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000072
+	_6f727265_5f656d69_746e7572_33317453
+	        0        0        0        0	(float)
+	        0        0        0        0	
+	        0        0        0  1.6e-43	
+	  7.5e+28 1.65e+19 7.56e+31 4.13e-08	
+	                 0                 0	(double)
+	                 0                 0	
+	                 0      5.63235e-322	
+	      6.99196e+228      6.97845e+252	
+zmm18:	 00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_3d3d3d3d_3d3d3d3d_3d3d3d00_0a736e6f
+	_69746174_6e656972_6f206c61_69727420
+	        0        0        0        0	(float)
+	        0        0        0        0	
+	   0.0462   0.0462   0.0462 1.17e-32	
+	 1.85e+25 1.77e+28 4.96e+28 1.83e+25	
+	                 0                 0	(double)
+	                 0                 0	
+	       1.03879e-13       1.03875e-13	
+	      9.75025e+199      1.94531e+227	
+zmm19:	 00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_18181818_18181818_18181800_0a564b4a
+	_4c514451_4b404c57_4a054944_4c575105
+	        0        0        0        0	(float)
+	        0        0        0        0	
+	 1.97e-24 1.97e-24 1.97e-24 1.03e-32	
+	 5.49e+07 1.26e+07 2.18e+06 5.64e+07	
+	                 0                 0	(double)
+	                 0                 0	
+	      1.32024e-192      1.32022e-192	
+	       4.33543e+59       3.88873e+48	
+zmm20:	 00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	        0        0        0        0	(float)
+	        0        0        0        0	
+	        0        0        0        0	
+	        0        0        0        0	
+	                 0                 0	(double)
+	                 0                 0	
+	                 0                 0	
+	                 0                 0	
+zmm21:	 00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	        0        0        0        0	(float)
+	        0        0        0        0	
+	        0        0        0        0	
+	        0        0        0        0	
+	                 0                 0	(double)
+	                 0                 0	
+	                 0                 0	
+	                 0                 0	
+zmm22:	 00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	        0        0        0        0	(float)
+	        0        0        0        0	
+	        0        0        0        0	
+	        0        0        0        0	
+	                 0                 0	(double)
+	                 0                 0	
+	                 0                 0	
+	                 0                 0	
+zmm23:	 00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	        0        0        0        0	(float)
+	        0        0        0        0	
+	        0        0        0        0	
+	        0        0        0        0	
+	                 0                 0	(double)
+	                 0                 0	
+	                 0                 0	
+	                 0                 0	
+zmm24:	 00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	        0        0        0        0	(float)
+	        0        0        0        0	
+	        0        0        0        0	
+	        0        0        0        0	
+	                 0                 0	(double)
+	                 0                 0	
+	                 0                 0	
+	                 0                 0	
+zmm25:	 00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	        0        0        0        0	(float)
+	        0        0        0        0	
+	        0        0        0        0	
+	        0        0        0        0	
+	                 0                 0	(double)
+	                 0                 0	
+	                 0                 0	
+	                 0                 0	
+zmm26:	 00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	        0        0        0        0	(float)
+	        0        0        0        0	
+	        0        0        0        0	
+	        0        0        0        0	
+	                 0                 0	(double)
+	                 0                 0	
+	                 0                 0	
+	                 0                 0	
+zmm27:	 00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	        0        0        0        0	(float)
+	        0        0        0        0	
+	        0        0        0        0	
+	        0        0        0        0	
+	                 0                 0	(double)
+	                 0                 0	
+	                 0                 0	
+	                 0                 0	
+zmm28:	 00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	        0        0        0        0	(float)
+	        0        0        0        0	
+	        0        0        0        0	
+	        0        0        0        0	
+	                 0                 0	(double)
+	                 0                 0	
+	                 0                 0	
+	                 0                 0	
+zmm29:	 00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	        0        0        0        0	(float)
+	        0        0        0        0	
+	        0        0        0        0	
+	        0        0        0        0	
+	                 0                 0	(double)
+	                 0                 0	
+	                 0                 0	
+	                 0                 0	
+zmm30:	 00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	        0        0        0        0	(float)
+	        0        0        0        0	
+	        0        0        0        0	
+	        0        0        0        0	
+	                 0                 0	(double)
+	                 0                 0	
+	                 0                 0	
+	                 0                 0	
+zmm31:	 00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	_00000000_00000000_00000000_00000000
+	        0        0        0        0	(float)
+	        0        0        0        0	
+	        0        0        0        0	
+	        0        0        0        0	
+	                 0                 0	(double)
+	                 0                 0	
+	                 0                 0	
+	                 0                 0	
+  /lib/x86_64-linux-gnu/libc.so.6(+0x42520) [0xbc791842520]
+  /lib/x86_64-linux-gnu/libc.so.6(pthread_kill+0x12c) [0xbc7918969fc]
+  /lib/x86_64-linux-gnu/libc.so.6(raise+0x16) [0xbc791842476]
+  /lib/x86_64-linux-gnu/libc.so.6(abort+0xd3) [0xbc7918287f3]
+  /lib/x86_64-linux-gnu/libstdc++.so.6(+0xa2b9e) [0xbc7938a2b9e]
+  /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae20c) [0xbc7938ae20c]
+  /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae277) [0xbc7938ae277]
+  /lib/x86_64-linux-gnu/libstdc++.so.6(+0xae4d8) [0xbc7938ae4d8]
+  /home/csllpr/source/gRASPA/src_clean/nvc_main.x() [0x4e2fe8]
+  /lib/x86_64-linux-gnu/libc.so.6(+0x29d90) [0xbc791829d90]
+  /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0x80) [0xbc791829e40]
+  /home/csllpr/source/gRASPA/src_clean/nvc_main.x() [0x408925]

@@ -33,7 +33,8 @@ def check_energy_drift(relative_file_path):
     finish = False
     try:
         # Construct the absolute file path using the relative path
-        file_path = os.path.join(os.getcwd(), relative_file_path)
+        base_directory = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(base_directory, relative_file_path)
         folder_name = os.path.basename(os.path.dirname(file_path))
 
         with open(file_path, 'r') as file:
@@ -88,7 +89,7 @@ def check_energy_drift(relative_file_path):
         return False
 
 def test_file():
-    current_directory = os.getcwd() + '/'
+    current_directory = os.path.dirname(os.path.abspath(__file__)) + '/'
     assert  check_files(current_directory, 'simulation.input')
     assert  os.path.exists(f"{current_directory}/Tail-Correction/force_field.def")
     paths = ['CO2-MFI',

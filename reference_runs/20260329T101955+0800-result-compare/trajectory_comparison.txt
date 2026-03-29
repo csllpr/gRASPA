@@ -1,0 +1,10 @@
+trajectory_lines_equal_all=True
+CO2-MFI: equal=True current_cycle_lines=1 baseline_cycle_lines=1
+Methane-TMMC: equal=True current_cycle_lines=15 baseline_cycle_lines=15
+Bae-Mixture: equal=True current_cycle_lines=260 baseline_cycle_lines=260
+NU2000-pX-LinkerRotations: equal=True current_cycle_lines=20 baseline_cycle_lines=20
+Tail-Correction: equal=True current_cycle_lines=10 baseline_cycle_lines=10
+Reference_NIST_SPCE/Box-1: equal=True current_cycle_lines=0 baseline_cycle_lines=0
+Reference_NIST_SPCE/Box-2: equal=True current_cycle_lines=0 baseline_cycle_lines=0
+Reference_NIST_SPCE/Box-3: equal=True current_cycle_lines=0 baseline_cycle_lines=0
+Reference_NIST_SPCE/Box-4: equal=True current_cycle_lines=0 baseline_cycle_lines=0

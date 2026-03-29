@@ -1,0 +1,6 @@
+energy_marker_lines_equal_all=False
+CO2-MFI: equal=True current_marker_lines=13 baseline_marker_lines=13
+Methane-TMMC: equal=False current_marker_lines=13 baseline_marker_lines=13
+Bae-Mixture: equal=False current_marker_lines=15 baseline_marker_lines=15
+NU2000-pX-LinkerRotations: equal=False current_marker_lines=15 baseline_marker_lines=15
+Tail-Correction: equal=False current_marker_lines=13 baseline_marker_lines=13

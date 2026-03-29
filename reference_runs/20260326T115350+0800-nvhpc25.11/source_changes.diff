@@ -1,0 +1,82 @@
+diff --git a/Examples/run_designated_folders.py b/Examples/run_designated_folders.py
+index 1f16438..73112e2 100644
+--- a/Examples/run_designated_folders.py
++++ b/Examples/run_designated_folders.py
+@@ -1,14 +1,23 @@
+ import os
+-homedir=os.getcwd()
+-repodir=os.path.dirname(homedir)
++import shutil
++import subprocess
++
++homedir = os.getcwd()
++repodir = os.path.dirname(homedir)
+ basics = ['CO2-MFI', 'Methane-TMMC', 'Bae-Mixture', 'NU2000-pX-LinkerRotations', 'Tail-Correction']
+ ref_calc = ['Reference_NIST_SPCE/Box-1/', 'Reference_NIST_SPCE/Box-2/', 'Reference_NIST_SPCE/Box-3/', 'Reference_NIST_SPCE/Box-4/']
+ sims = []
+-sims.extend(basics); sims.extend(ref_calc)
+-#basics = ['NU2000-pX-LinkerRotations', 'Tail-Correction', 'CO2-MFI', 'Methane-TMMC', 'Bae-Mixture']
++sims.extend(basics)
++sims.extend(ref_calc)
++
++binary = os.path.join(repodir, "src_clean", "nvc_main.x")
++cleanup_dirs = ["AllData", "FirstBead", "Lambda", "Movies", "Restart", "TMMC"]
++
+ for direct in sims:
+-  os.chdir(f"{direct}")
+-  os.system(f"{repodir}/src_clean/nvc_main.x > output.txt")
+-  os.system("rm -r AllData FirstBead Lambda Movies Restart TMMC")
+-  os.chdir(f"{homedir}")
++  os.chdir(direct)
++  with open("output.txt", "w") as output_file:
++    subprocess.run([binary], stdout=output_file, stderr=subprocess.STDOUT, check=True)
++  for dirname in cleanup_dirs:
++    shutil.rmtree(dirname, ignore_errors=True)
++  os.chdir(homedir)
+   print(f"Simulation {direct} has finished.\n")
+diff --git a/src_clean/NVC_COMPILE b/src_clean/NVC_COMPILE
+index 6966b68..b8138f0 100755
+--- a/src_clean/NVC_COMPILE
++++ b/src_clean/NVC_COMPILE
+@@ -1,25 +1,27 @@
+ #!/bin/bash
+ 
+-rm nvc_main.x
++set -euo pipefail
+ 
+-CXX="/opt/nvidia/hpc_sdk/Linux_x86_64/24.5/compilers/bin/nvc++"
++SCRIPT_DIR="$(cd -- "$(dirname -- "$0")" && pwd)"
++cd "$SCRIPT_DIR"
+ 
+-LINKFLAG="-L/opt/nvidia/hpc_sdk/Linux_x86_64/22.5/cuda/lib64 -L/usr/lib64/ -L/opt/local/lib/gcc11/"
++rm -f nvc_main.x
+ 
+-NVCFLAG="-O3 -std=c++20 -target=gpu -Minline -fopenmp -cuda -stdpar=multicore"
+-
+-$CXX $NVCFLAG $LINKFLAG -c axpy.cu && echo "Finished axpy.cu" &
+-
+-$CXX $NVCFLAG $LINKFLAG -c main.cpp && echo "Finished main.cpp" &
++NVHPC_ROOT="${NVHPC_ROOT:-/opt/nvidia/hpc_sdk/Linux_x86_64/25.11}"
++CXX="${CXX:-$NVHPC_ROOT/compilers/bin/nvc++}"
+ 
+-$CXX $NVCFLAG $LINKFLAG -c read_data.cpp && echo "Finished read_data.cpp" &
+-
+-$CXX $NVCFLAG $LINKFLAG -c data_struct.cpp && echo "Finished data_struct.cpp" &
++LINKFLAG="-L$NVHPC_ROOT/cuda/lib64 -L/usr/lib64/ -L/opt/local/lib/gcc11/"
++NVCFLAG="-O3 -std=c++20 -target=gpu -Minline -fopenmp -cuda -stdpar=multicore"
+ 
+-$CXX $NVCFLAG $LINKFLAG -c VDW_Coulomb.cu && echo "Finished VDW_Coulomb.cu" &
++"$CXX" $NVCFLAG $LINKFLAG -c axpy.cu && echo "Finished axpy.cu" &
++"$CXX" $NVCFLAG $LINKFLAG -c main.cpp && echo "Finished main.cpp" &
++"$CXX" $NVCFLAG $LINKFLAG -c read_data.cpp && echo "Finished read_data.cpp" &
++"$CXX" $NVCFLAG $LINKFLAG -c data_struct.cpp && echo "Finished data_struct.cpp" &
++"$CXX" $NVCFLAG $LINKFLAG -c VDW_Coulomb.cu && echo "Finished VDW_Coulomb.cu" &
+ 
+ wait
+ 
+-$CXX $NVCFLAG $LINKFLAG main.o read_data.o axpy.o data_struct.o VDW_Coulomb.o -o nvc_main.x ; echo "Finished Linking"
++"$CXX" $NVCFLAG $LINKFLAG main.o read_data.o axpy.o data_struct.o VDW_Coulomb.o -o nvc_main.x
++echo "Finished Linking"
+ 
+-rm *.o
++rm -f -- *.o

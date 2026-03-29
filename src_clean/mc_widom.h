@@ -102,15 +102,14 @@ inline void CBMC_PairwiseInteractions(Variables& Vars, size_t systemId, Componen
   if(Atomsize != 0)
   {
     Calculate_Multiple_Trial_Energy_VDWReal<<<HGGG_Nblock * NTrials, HGGG_Nthread, 2 * HGGG_Nthread * sizeof(double)>>>(Sims.Box, Sims.d_a, Sims.New, Vars.device_FF, Sims.Blocksum, component, Atomsize, Sims.device_flag, threadsNeeded, chainsize, HGGG_Nblock, HG_Nblock, SystemComponents.NComponents, Sims.ExcludeList); checkCUDAError("Error calculating energies (PARTIAL SUM HGGG)");
-    //use Async?
-    //cudaMemcpy(SystemComponents.flag, Sims.device_flag, NTrials*sizeof(bool), cudaMemcpyDeviceToHost);
     cudaDeviceSynchronize();
-    //for (size_t a = 0; a < NTrials; a++) SystemComponents.flag[a] = Sims.device_flag[a];
+    CopyBlocksumToHost(SystemComponents, Sims, 2 * HGGG_Nblock * NTrials);
   } 
+  CopyDeviceFlagsToHost(SystemComponents, Sims, NTrials);
   //printf("OldNBlock: %zu, HG_Nblock: %zu, GG_Nblock: %zu, HGGG_Nblock: %zu\n", Nblock, HG_Nblock, GG_Nblock, HGGG_Nblock); 
   
   //printf("FIRST BEAD ENERGIES\n");
-  Host_sum_Widom_HGGG_SEPARATE(SystemComponents, NTrials, Sims.Blocksum, Sims.device_flag, HG_Nblock, HGGG_Nblock, Vars.device_FF.VDWRealBias);
+  Host_sum_Widom_HGGG_SEPARATE(SystemComponents, NTrials, SystemComponents.host_array, SystemComponents.flag, HG_Nblock, HGGG_Nblock, Vars.device_FF.VDWRealBias);
 }
 
 

@@ -4,6 +4,9 @@
 #include <string>
 #include <vector>
 #include <numeric>
+#include <optional>
+#include <cctype>
+#include <exception>
 
 #include <algorithm> //for remove_if
 
@@ -22,6 +25,105 @@
 
 #define MAX2(x,y) (((x)>(y))?(x):(y))                 // the maximum of two numbers
 #define MAX3(x,y,z) MAX2((x),MAX2((y),(z)))
+
+namespace
+{
+struct InputFileErrorContext
+{
+  std::string filename;
+  size_t line = 0;
+  std::string line_text;
+};
+
+thread_local std::optional<InputFileErrorContext> PendingInputErrorContext;
+
+struct InputFileScope
+{
+  explicit InputFileScope(std::string filename)
+      : Context{std::move(filename), 0, ""}, UncaughtExceptions(std::uncaught_exceptions())
+  {
+  }
+
+  ~InputFileScope()
+  {
+    if(std::uncaught_exceptions() > UncaughtExceptions && !PendingInputErrorContext.has_value())
+      PendingInputErrorContext = Context;
+  }
+
+  void NoteLine(size_t line_number, const std::string& line_text)
+  {
+    Context.line = line_number;
+    Context.line_text = line_text;
+  }
+
+private:
+  InputFileErrorContext Context;
+  int UncaughtExceptions = 0;
+};
+
+static inline std::string SummarizeInputLine(const std::string& input)
+{
+  std::string summarized;
+  bool previousWasSpace = false;
+  for(char c : input)
+  {
+    unsigned char uc = static_cast<unsigned char>(c);
+    if(std::isspace(uc))
+    {
+      if(previousWasSpace) continue;
+      summarized.push_back(' ');
+      previousWasSpace = true;
+    }
+    else
+    {
+      summarized.push_back(c);
+      previousWasSpace = false;
+    }
+  }
+
+  size_t first = summarized.find_first_not_of(' ');
+  if(first == std::string::npos) return "";
+  size_t last = summarized.find_last_not_of(' ');
+  summarized = summarized.substr(first, last - first + 1);
+  if(summarized.size() > 160) summarized = summarized.substr(0, 157) + "...";
+  return summarized;
+}
+
+static inline std::ifstream OpenTextFileOrThrow(const std::string& filename)
+{
+  std::ifstream file(filename);
+  if(!file.is_open())
+    throw std::runtime_error("Could not open file");
+  return file;
+}
+
+static inline bool ReadTrackedLine(std::ifstream& file, std::string& line, size_t& line_number, InputFileScope& scope)
+{
+  if(!std::getline(file, line)) return false;
+  ++line_number;
+  scope.NoteLine(line_number, line);
+  return true;
+}
+}
+
+std::string FormatInputErrorMessage(const std::string& message)
+{
+  if(message.rfind("Input error in file [", 0) == 0) return message;
+  if(!PendingInputErrorContext.has_value()) return message;
+
+  InputFileErrorContext context = *PendingInputErrorContext;
+  PendingInputErrorContext.reset();
+
+  std::string formatted = "Input error in file [" + context.filename + "]";
+  if(context.line > 0) formatted += " at line " + std::to_string(context.line);
+  formatted += ": " + message;
+
+  std::string line_summary = SummarizeInputLine(context.line_text);
+  if(context.line > 0 && !line_summary.empty())
+    formatted += "\n  line: " + line_summary;
+
+  return formatted;
+}
 
 inline std::vector<std::string> split(const std::string txt, char ch)
 {
@@ -203,11 +305,13 @@ void Check_Component_size(Components& SystemComponents)
 
 void read_number_of_sims_from_input(size_t *NumSims, bool *SingleSim)
 {
+  InputFileScope input_scope("simulation.input");
   std::vector<std::string> termsScannedLined{};
   std::string str;
-  std::ifstream file("simulation.input");
+  std::ifstream file = OpenTextFileOrThrow("simulation.input");
   size_t tempnum = 0; bool tempsingle = false; size_t counter = 0;
-  while (std::getline(file, str))
+  size_t line_number = 0;
+  while (ReadTrackedLine(file, str, line_number, input_scope))
   {
     counter++;
     if (str.find("SingleSimulation", 0) != std::string::npos)
@@ -234,10 +338,12 @@ void read_simulation_input(Variables& Vars, bool *ReadRestart, bool *SameFramewo
 {
   bool tempRestart = false;  //Whether we read restart file or not
 
+  InputFileScope input_scope("simulation.input");
   std::vector<std::string> termsScannedLined{};
   std::string str;
-  std::ifstream file("simulation.input");
+  std::ifstream file = OpenTextFileOrThrow("simulation.input");
   int counter=0;
+  size_t line_number = 0;
 
   size_t tempNComp = 0; 
   int3& NComponents = Vars.TempComponents.NComponents;
@@ -245,7 +351,7 @@ void read_simulation_input(Variables& Vars, bool *ReadRestart, bool *SameFramewo
   bool tempSameFrameworkEverySimulation = true;
   bool tempSeparateFramework = false;
 
-  while (std::getline(file, str))
+  while (ReadTrackedLine(file, str, line_number, input_scope))
   {
     counter++;
     if (str.find("UseGPUReduction", 0) != std::string::npos)
@@ -312,6 +418,9 @@ void read_simulation_input(Variables& Vars, bool *ReadRestart, bool *SameFramewo
     if (str.find("NumberOfBlocks", 0) != std::string::npos)
     {
       Split_Tab_Space(termsScannedLined, str);
+      sscanf(termsScannedLined[1].c_str(), "%zu", &Vars.TempComponents.Nblock);
+      if(Vars.TempComponents.Nblock == 0) throw std::runtime_error("NumberOfBlocks must be greater than ZERO!");
+      Vars.TempComponents.ConfiguredNblock = Vars.TempComponents.Nblock;
       ////printf("line is %u, there are %zu Framework Atoms\n", counter, NumberFrameworkAtom);
     }
     if (str.find("Pressure", 0) != std::string::npos)
@@ -382,13 +491,15 @@ void read_simulation_input(Variables& Vars, bool *ReadRestart, bool *SameFramewo
 
 void read_Gibbs_and_Cycle_Stats(Variables& Vars, bool& SetMaxStep, size_t& MaxStepPerCycle)
 {
+  InputFileScope input_scope("simulation.input");
   size_t counter = 0;
   double temp = 0.0;
   std::vector<std::string> termsScannedLined{};
   std::string str;
-  std::ifstream file("simulation.input");
+  std::ifstream file = OpenTextFileOrThrow("simulation.input");
+  size_t line_number = 0;
 
-  while (std::getline(file, str))
+  while (ReadTrackedLine(file, str, line_number, input_scope))
   {
     counter++;
     if (str.find("GibbsVolumeChangeProbability", 0) != std::string::npos)
@@ -431,6 +542,73 @@ void read_Gibbs_and_Cycle_Stats(Variables& Vars, bool& SetMaxStep, size_t& MaxSt
       Split_Tab_Space(termsScannedLined, str);
       sscanf(termsScannedLined[1].c_str(), "%zu", &Vars.StructureFactor_Multiplier);
     }
+    if (str.find("UseAdaptiveProduction", 0) != std::string::npos)
+    {
+      Split_Tab_Space(termsScannedLined, str);
+      if(caseInSensStringCompare(termsScannedLined[1], "yes"))
+        Vars.AdaptiveProduction.Enabled = true;
+    }
+    if (str.find("AdaptiveCriteriaMode", 0) != std::string::npos)
+    {
+      Split_Tab_Space(termsScannedLined, str);
+      if(caseInSensStringCompare(termsScannedLined[1], "any"))
+      {
+        Vars.AdaptiveProduction.CriteriaMode = ADAPTIVE_CRITERIA_ANY;
+      }
+      else if(caseInSensStringCompare(termsScannedLined[1], "all"))
+      {
+        Vars.AdaptiveProduction.CriteriaMode = ADAPTIVE_CRITERIA_ALL;
+      }
+      else
+      {
+        throw std::runtime_error("AdaptiveCriteriaMode must be 'Any' or 'All'");
+      }
+    }
+    if (str.find("MaximumProductionCycles", 0) != std::string::npos)
+    {
+      Split_Tab_Space(termsScannedLined, str);
+      sscanf(termsScannedLined[1].c_str(), "%zu", &Vars.AdaptiveProduction.MaximumCycles);
+    }
+    if (str.find("AdaptiveBatchCycles", 0) != std::string::npos)
+    {
+      Split_Tab_Space(termsScannedLined, str);
+      sscanf(termsScannedLined[1].c_str(), "%zu", &Vars.AdaptiveProduction.BatchCycles);
+    }
+    if (str.find("AdaptiveMinimumBatches", 0) != std::string::npos)
+    {
+      Split_Tab_Space(termsScannedLined, str);
+      sscanf(termsScannedLined[1].c_str(), "%zu", &Vars.AdaptiveProduction.MinimumBatches);
+    }
+    if (str.find("AdaptiveConsecutivePasses", 0) != std::string::npos)
+    {
+      Split_Tab_Space(termsScannedLined, str);
+      sscanf(termsScannedLined[1].c_str(), "%zu", &Vars.AdaptiveProduction.ConsecutivePasses);
+    }
+    if (str.find("AdaptiveMinimumWidomSamples", 0) != std::string::npos)
+    {
+      Split_Tab_Space(termsScannedLined, str);
+      sscanf(termsScannedLined[1].c_str(), "%zu", &Vars.AdaptiveProduction.MinimumWidomSamples);
+    }
+    if (str.find("AdaptiveRelativeTolerance", 0) != std::string::npos)
+    {
+      Split_Tab_Space(termsScannedLined, str);
+      Vars.AdaptiveProduction.RelativeTolerance = std::stod(termsScannedLined[1]);
+    }
+    if (str.find("AdaptiveRelativeFloor", 0) != std::string::npos)
+    {
+      Split_Tab_Space(termsScannedLined, str);
+      Vars.AdaptiveProduction.RelativeFloor = std::stod(termsScannedLined[1]);
+    }
+    if (str.find("AdaptiveAbsoluteToleranceHenry", 0) != std::string::npos)
+    {
+      Split_Tab_Space(termsScannedLined, str);
+      Vars.AdaptiveProduction.HenryAbsoluteTolerance = std::stod(termsScannedLined[1]);
+    }
+    if (str.find("AdaptiveAbsoluteToleranceHeat", 0) != std::string::npos)
+    {
+      Split_Tab_Space(termsScannedLined, str);
+      Vars.AdaptiveProduction.HeatAbsoluteTolerance = std::stod(termsScannedLined[1]);
+    }
     
     if(counter>200) break;
   }
@@ -442,6 +620,16 @@ void read_Gibbs_and_Cycle_Stats(Variables& Vars, bool& SetMaxStep, size_t& MaxSt
   {
     printf("Running Cycles in the Normal Way\n");
   }
+  if(Vars.AdaptiveProduction.Enabled)
+  {
+    printf("Adaptive production is enabled\n");
+    printf("Criteria Mode: %s, Maximum Production Cycles: %zu, Batch Cycles: %zu, Minimum Batches: %zu, Consecutive Passes: %zu\n",
+           Vars.AdaptiveProduction.CriteriaMode == ADAPTIVE_CRITERIA_ALL ? "All" : "Any",
+           Vars.AdaptiveProduction.MaximumCycles,
+           Vars.AdaptiveProduction.BatchCycles,
+           Vars.AdaptiveProduction.MinimumBatches,
+           Vars.AdaptiveProduction.ConsecutivePasses);
+  }
   Vars.GibbsStatistics.GibbsBoxStats  = {0, 0};
   Vars.GibbsStatistics.GibbsXferStats = {0, 0};
   file.close();
@@ -449,6 +637,7 @@ void read_Gibbs_and_Cycle_Stats(Variables& Vars, bool& SetMaxStep, size_t& MaxSt
 
 void read_FFParams_from_input(Input_Container& Input)
 {
+  InputFileScope input_scope("simulation.input");
   std::vector<std::string> termsScannedLined{};
   std::string str;
 
@@ -458,8 +647,9 @@ void read_FFParams_from_input(Input_Container& Input)
   //double tempalpha = 0.26506; //Zhao's note: here we used alpha equal to the preset value from raspa3. Need to revisit RASPA-2 for the exact calculation of alpha.
   //Zhao's note: Using the heuresitic equation for converting Ewald Precision to alpha.
 
-  std::ifstream file("simulation.input");
-  while (std::getline(file, str))
+  std::ifstream file = OpenTextFileOrThrow("simulation.input");
+  size_t line_number = 0;
+  while (ReadTrackedLine(file, str, line_number, input_scope))
   {
     if (str.find("ChargeMethod", 0) != std::string::npos)
     {
@@ -525,16 +715,18 @@ void ReadFrameworkComponentMoves(Move_Statistics& MoveStats, Components& SystemC
   //printf("Checking Framework Moves for Framework Component %zu\n", comp);
   std::string FrameworkComponentName = "Framework_Component_ " + std::to_string(comp); //Separate with a space, add a _ to avoid confusion with Adsorbate species//
 
+  InputFileScope input_scope("simulation.input");
   std::vector<std::string> termsScannedLined{};
   std::string str;
 
-  std::ifstream file("simulation.input");
+  std::ifstream file = OpenTextFileOrThrow("simulation.input");
+  size_t line_number = 0;
 
   size_t start_counter = 0; bool FOUND = false;
   std::string start_string = FrameworkComponentName;
   std::string terminate_string="END_OF_" + FrameworkComponentName;
   //first get the line number of the destinated component
-  while (std::getline(file, str))
+  while (ReadTrackedLine(file, str, line_number, input_scope))
   {
     if(str.find(start_string, 0) != std::string::npos){FOUND = true; break;}
     start_counter++;
@@ -550,9 +742,10 @@ void ReadFrameworkComponentMoves(Move_Statistics& MoveStats, Components& SystemC
 
   file.clear();
   file.seekg(0);
+  line_number = 0;
 
   size_t counter = 0;
-  while (std::getline(file, str))
+  while (ReadTrackedLine(file, str, line_number, input_scope))
   {
     if(str.find(terminate_string, 0) != std::string::npos){break;}
     if(counter >= start_counter) //start reading after touching the starting line number
@@ -604,11 +797,13 @@ void read_Ewald_Parameters_from_input(double CutOffCoul, Boxsize& Box, double pr
   bool Ewald_UseLAMMPS_Setup = false; //Default using RASPA-2's setup (automatic, heurestic)
   //printf("----------------EWALD SUMMATION SETUP-----------------\n");
   //Zhao's note: add controls if the users want to use specified ewald parameters//
+  InputFileScope input_scope("simulation.input");
   std::vector<std::string> termsScannedLined{};
   std::string str;
 
-  std::ifstream file("simulation.input");
-  while (std::getline(file, str))
+  std::ifstream file = OpenTextFileOrThrow("simulation.input");
+  size_t line_number = 0;
+  while (ReadTrackedLine(file, str, line_number, input_scope))
   {
     if (str.find("Ewald_UseLAMMPS_Setup", 0) != std::string::npos)
     {
@@ -621,12 +816,13 @@ void read_Ewald_Parameters_from_input(double CutOffCoul, Boxsize& Box, double pr
   }
   file.clear();
   file.seekg(0);
+  line_number = 0;
   if(Ewald_UseLAMMPS_Setup) 
   //Then read alpha and number of kvectors in xyz, calculate reciprocal cutoff//
   {
     bool AlphaFound = false;
     bool kvecFound  = false;
-    while (std::getline(file, str))
+    while (ReadTrackedLine(file, str, line_number, input_scope))
     {
       if (str.find("Ewald_Alpha", 0) != std::string::npos)
       {
@@ -748,11 +944,13 @@ double Mixing_rule_Sigma(double sig1, double sig2)
 //void ForceFieldParser(ForceField& FF, PseudoAtomDefinitions& PseudoAtom)
 void ForceFieldParser(Input_Container& Input, PseudoAtomDefinitions& PseudoAtom)
 {
+  InputFileScope input_scope("force_field_mixing_rules.def");
   Input.AtomFF = std::vector<Atom_FF>();
   std::string scannedLine; std::string str;
   std::vector<std::string> termsScannedLined{};
   size_t counter = 0;
-  std::ifstream FFMixfile("force_field_mixing_rules.def");
+  std::ifstream FFMixfile = OpenTextFileOrThrow("force_field_mixing_rules.def");
+  size_t line_number = 0;
   size_t NumberOfDefinitions = 0;
   //Temporary vectors for storing the data
   // Some other temporary values
@@ -760,7 +958,7 @@ void ForceFieldParser(Input_Container& Input, PseudoAtomDefinitions& PseudoAtom)
   Atom_FF AtomFF; //placeholder for temp values to push back//
   //printf("------------------PARSING FORCE FIELD MIXING RULES----------------\n");
   // First read the pseudo atom file
-  while (std::getline(FFMixfile, str))
+  while (ReadTrackedLine(FFMixfile, str, line_number, input_scope))
   {
     if(counter == 1) //read shifted/truncated
     {
@@ -869,11 +1067,13 @@ void OverWrite_Mixing_Rule(Input_Container& Input)
 {
   std::string scannedLine; std::string str;
   std::vector<std::string> termsScannedLined{};
-  std::ifstream FFMixfile("force_field_mixing_rules.def");
+  InputFileScope mixing_scope("force_field_mixing_rules.def");
+  std::ifstream FFMixfile = OpenTextFileOrThrow("force_field_mixing_rules.def");
   bool shifted = false;
   size_t counter = 0;
+  size_t line_number = 0;
   //check if vdw is shifted
-  while (std::getline(FFMixfile, str))
+  while (ReadTrackedLine(FFMixfile, str, line_number, mixing_scope))
   {
     if(counter == 1) //read shifted/truncated
     {
@@ -887,18 +1087,20 @@ void OverWrite_Mixing_Rule(Input_Container& Input)
   FFMixfile.close();
 
   //Check if file exist//
-  std::ifstream OverWritefile("force_field.def");
   std::filesystem::path pathfile = std::filesystem::path("force_field.def");
   if (!std::filesystem::exists(pathfile))
   {
     //printf("Force Field OverWrite file not found\n");
     return;
   }
+  InputFileScope overwrite_scope("force_field.def");
+  std::ifstream OverWritefile = OpenTextFileOrThrow("force_field.def");
   
   size_t startline = 0; size_t Noverwrite = 0;
   counter = 0;
+  line_number = 0;
   //check # of mixing rules to overwrite
-  while (std::getline(OverWritefile, str))
+  while (ReadTrackedLine(OverWritefile, str, line_number, overwrite_scope))
   {
     if (str.find("mixing rules to overwrite", 0) != std::string::npos) //read OverWriteSize
     {
@@ -920,11 +1122,12 @@ void OverWrite_Mixing_Rule(Input_Container& Input)
   }
   OverWritefile.clear();
   OverWritefile.seekg(0);
+  line_number = 0;
 
   size_t FFsize = Input.AtomFF.size();
 
   counter = 0;
-  while (std::getline(OverWritefile, str))
+  while (ReadTrackedLine(OverWritefile, str, line_number, overwrite_scope))
   {
     //printf("counter: %zu, %s, shifted: %s\n", counter, (counter >= (startline+3) && counter < (3 + startline + Noverwrite)) ? "true" : "false", shifted ? "true" : "false");
     if(counter >= (startline+3) && counter < (3 + startline + Noverwrite))
@@ -975,15 +1178,17 @@ void OverWriteTailCorrection(Input_Container& Input)
   size_t typeI; size_t typeJ;
   std::vector<Tail>& TempTail = Input.Mix_Tail;
 
-  std::ifstream OverWritefile("force_field.def");
   std::filesystem::path pathfile = std::filesystem::path("force_field.def");
   if (!std::filesystem::exists(pathfile))
   {
     //printf("Force Field OverWrite file not found\n");
     return;
   }
+  InputFileScope input_scope("force_field.def");
+  std::ifstream OverWritefile = OpenTextFileOrThrow("force_field.def");
   //printf("----------------FORCE FIELD OVERWRITTEN (TAIL CORRECTION) PARAMETERS----------------\n");
-  while (std::getline(OverWritefile, str))
+  size_t line_number = 0;
+  while (ReadTrackedLine(OverWritefile, str, line_number, input_scope))
   { 
     if(counter == 1) //read OverWriteSize
     {
@@ -1088,11 +1293,13 @@ void Copy_InputLoader_Data(Variables& Vars)
 
 void read_movies_stats_print(Components& SystemComponents, size_t sim)
 {
+  InputFileScope input_scope("simulation.input");
   std::vector<std::string> termsScannedLined{};
   std::string str;
-  std::ifstream file("simulation.input");
+  std::ifstream file = OpenTextFileOrThrow("simulation.input");
+  size_t line_number = 0;
 
-  while (std::getline(file, str))
+  while (ReadTrackedLine(file, str, line_number, input_scope))
   {
     if (str.find("MoviesEvery", 0) != std::string::npos)
     {
@@ -1138,13 +1345,15 @@ void read_movies_stats_print(Components& SystemComponents, size_t sim)
 
 void PseudoAtomParser(PseudoAtomDefinitions& PseudoAtom)
 {
+  InputFileScope input_scope("pseudo_atoms.def");
   std::string scannedLine; std::string str;
   std::vector<std::string> termsScannedLined{};
   size_t counter = 0;
-  std::ifstream PseudoAtomfile("pseudo_atoms.def");
+  std::ifstream PseudoAtomfile = OpenTextFileOrThrow("pseudo_atoms.def");
+  size_t line_number = 0;
   size_t NumberOfPseudoAtoms = 0;
   // First read the pseudo atom file
-  while (std::getline(PseudoAtomfile, str))
+  while (ReadTrackedLine(PseudoAtomfile, str, line_number, input_scope))
   {
     if(counter == 1) //read number definitions
     {
@@ -1292,7 +1501,8 @@ void CheckFrameworkCIF(Boxsize& Box, PseudoAtomDefinitions& PseudoAtom, std::str
   termsScannedLined = split(Frameworkfile, '.');
   std::string frameworkName = termsScannedLined[0];
   std::string CIFFile = frameworkName + ".cif";
-  std::ifstream simfile(CIFFile);
+  InputFileScope input_scope(CIFFile);
+  std::ifstream simfile = OpenTextFileOrThrow(CIFFile);
   std::filesystem::path pathfile = std::filesystem::path(CIFFile);
   if (!std::filesystem::exists(pathfile))
   {
@@ -1315,7 +1525,8 @@ void CheckFrameworkCIF(Boxsize& Box, PseudoAtomDefinitions& PseudoAtom, std::str
   double3 angle; //x = alpha; y = beta; z = gamma;
   double3 abc; 
   double3 axbycz; //Diagonal of the matrix//
-  while (std::getline(simfile, str))
+  size_t line_number = 0;
+  while (ReadTrackedLine(simfile, str, line_number, input_scope))
   {
     if (str.find("_cell_length_a", 0) != std::string::npos)
     {
@@ -1362,6 +1573,7 @@ void CheckFrameworkCIF(Boxsize& Box, PseudoAtomDefinitions& PseudoAtom, std::str
   Box.Cell[6] = NumberUnitCells.z * cx;       Box.Cell[7] = NumberUnitCells.z * cy;       Box.Cell[8] = NumberUnitCells.z * axbycz.z;
   simfile.clear();
   simfile.seekg(0);
+  line_number = 0;
 
   // Check the atom_site keyword: get its first and last occurance//
   //.x is the start, .y is the end//
@@ -1370,7 +1582,7 @@ void CheckFrameworkCIF(Boxsize& Box, PseudoAtomDefinitions& PseudoAtom, std::str
   bool foundline = false;
   //Initialize the order of the required columns in the CIF file with -1 (meaning non-existent)
   std::vector<int>Label_x_y_z_Charge_Order(5,-1);
-  while (std::getline(simfile, str))
+  while (ReadTrackedLine(simfile, str, line_number, input_scope))
   {
     if (str.find("_atom_site", 0) != std::string::npos)
     {
@@ -1399,6 +1611,7 @@ void CheckFrameworkCIF(Boxsize& Box, PseudoAtomDefinitions& PseudoAtom, std::str
   //printf("atom_site starts at line %d, and ends at %d\n", atom_site_occurance.x, atom_site_occurance.y);
   simfile.clear();
   simfile.seekg(0);
+  line_number = 0;
 
   //Loop Over the Atoms//
   //size_t AtomID = 0;
@@ -1451,7 +1664,7 @@ void CheckFrameworkCIF(Boxsize& Box, PseudoAtomDefinitions& PseudoAtom, std::str
   size_t AtomCountPerUnitcell = 0;
   // initiate total mass as a vector of doubles with size of framework components
   std::vector<double> totalmass(SystemComponents.NComponents.y, 0.0);
-  while (std::getline(simfile, str))
+  while (ReadTrackedLine(simfile, str, line_number, input_scope))
   {
     if(i <= atom_site_occurance.y){i++; continue;}
     //AtomID = i - atom_site_occurance.y - 1;
@@ -1690,8 +1903,10 @@ void ReadFrameworkSpeciesDefinitions(Components& SystemComponents)
       throw std::runtime_error("Framework Component NOT FOUND!!!!\n");
     }
     SystemComponents.FrameworkComponentDef[i].SeparatedComponent = true;
-    std::ifstream file(FileName);
-    while (std::getline(file, str))
+    InputFileScope input_scope(FileName);
+    std::ifstream file = OpenTextFileOrThrow(FileName);
+    size_t line_number = 0;
+    while (ReadTrackedLine(file, str, line_number, input_scope))
     {
       if (str.find("#", 0) != std::string::npos) continue;
       if (str.find("Framework_Component_Name", 0) != std::string::npos)
@@ -1749,7 +1964,8 @@ void ReadFramework(Boxsize& Box, PseudoAtomDefinitions& PseudoAtom, size_t Frame
   std::vector<std::string> termsScannedLined{};
   //size_t counter = 0;
   //Determine framework name (file name)//
-  std::ifstream simfile("simulation.input");
+  InputFileScope input_scope("simulation.input");
+  std::ifstream simfile = OpenTextFileOrThrow("simulation.input");
   std::string Frameworkname;
   std::string InputType="cif";
 
@@ -1757,7 +1973,8 @@ void ReadFramework(Boxsize& Box, PseudoAtomDefinitions& PseudoAtom, size_t Frame
   bool FrameworkFound = false;
 
   //Check input file for "UseChargeFromCIFFile" keyword//
-  while (std::getline(simfile, str))
+  size_t line_number = 0;
+  while (ReadTrackedLine(simfile, str, line_number, input_scope))
   {
     if (str.find("UseChargesFromCIFFile", 0) != std::string::npos)
     {
@@ -1771,8 +1988,9 @@ void ReadFramework(Boxsize& Box, PseudoAtomDefinitions& PseudoAtom, size_t Frame
   }
   simfile.clear();
   simfile.seekg(0);
+  line_number = 0;
     
-  while (std::getline(simfile, str))
+  while (ReadTrackedLine(simfile, str, line_number, input_scope))
   {
     if (str.find("InputFileType", 0) != std::string::npos)
     {
@@ -1860,6 +2078,7 @@ void MoleculeDefinitionParser(Atoms& Mol, Components& SystemComponents, std::str
 {
   //check if molecule definition file exists
   const std::string MolFileName = MolName + ".def";
+  InputFileScope input_scope(MolFileName);
   std::filesystem::path pathfile = std::filesystem::path(MolFileName);
   if (!std::filesystem::exists(pathfile))
   {
@@ -1868,7 +2087,8 @@ void MoleculeDefinitionParser(Atoms& Mol, Components& SystemComponents, std::str
   std::string scannedLine; std::string str;
   std::vector<std::string> termsScannedLined{};
   size_t counter = 0; size_t temp_molsize = 0; size_t atomcount = 0;
-  std::ifstream file(MolFileName);
+  std::ifstream file = OpenTextFileOrThrow(MolFileName);
+  size_t line_number = 0;
 
   Mol.Allocate_size = Allocate_space;
   std::vector<double3> Apos(Allocate_space);
@@ -1890,7 +2110,7 @@ void MoleculeDefinitionParser(Atoms& Mol, Components& SystemComponents, std::str
   std::vector<int2> ANumberOfPseudoAtomsForSpecies(PseudoAtomSize, TempINTTWO);
 
   // skip first line
-  while (std::getline(file, str))
+  while (ReadTrackedLine(file, str, line_number, input_scope))
   {
     if(counter == 1) //read Tc
     {
@@ -2028,7 +2248,8 @@ static inline void Read_TMMC_Initial(TMMC& tmmc, std::string& MolName)
   std::vector<std::string> termsScannedLined{};
   //Determine framework name (file name)//
   std::string Filename = "TMMCInitial/System_0/TMMC_Statistics.data";
-  std::ifstream file(Filename);
+  InputFileScope input_scope(Filename);
+  std::ifstream file = OpenTextFileOrThrow(Filename);
   std::filesystem::path pathfile = std::filesystem::path(Filename);
   if (!std::filesystem::exists(pathfile))
   {
@@ -2038,8 +2259,9 @@ static inline void Read_TMMC_Initial(TMMC& tmmc, std::string& MolName)
   int Histogramsize = -5;
   size_t counter = 0;
   size_t header  = 5;
+  size_t line_number = 0;
   //Process the header of the TMMCInitial file//
-  while (std::getline(file, str))
+  while (ReadTrackedLine(file, str, line_number, input_scope))
   {
     if(counter < header)
     {
@@ -2073,6 +2295,7 @@ static inline void Read_TMMC_Initial(TMMC& tmmc, std::string& MolName)
   }
   file.clear();
   file.seekg(0);
+  line_number = 0;
   //printf("Lines of TMMCInitial file: %d, Histogram size: %d\n", Histogramsize+5, Histogramsize);
   if(Histogramsize<= 0) throw std::runtime_error("TMMCInitial size is zero, there is no value written in the file. Check!!!");
   //Check histogram size and bin size//
@@ -2083,7 +2306,7 @@ static inline void Read_TMMC_Initial(TMMC& tmmc, std::string& MolName)
   if((Histogramsize-1) != (tmmc.MaxMacrostate - tmmc.MinMacrostate) * temp_nbin)
      throw std::runtime_error("Number of macrostates doesn't match! Your nbin: " + std::to_string(temp_nbin) + ", Histogram size: "+ std::to_string(Histogramsize) + ", Max-Min: " + std::to_string(tmmc.MaxMacrostate - tmmc.MinMacrostate));
   counter = 0;
-  while (std::getline(file, str))
+  while (ReadTrackedLine(file, str, line_number, input_scope))
   {
     Split_Tab_Space(termsScannedLined, str);
     if(counter >= header) //Skip line 5 (column names)
@@ -2115,20 +2338,23 @@ void read_component_values_from_simulation_input(Variables& Vars, Components& Sy
   //adsorbate component start from zero, but in the code, framework is zero-th component
   //This function also calls MoleculeDefinitionParser//
   size_t Terminatecomponent = AdsorbateComponent+1;
+  InputFileScope input_scope("simulation.input");
   std::vector<std::string> termsScannedLined{};
   std::string str;
-  std::ifstream file("simulation.input");
+  std::ifstream file = OpenTextFileOrThrow("simulation.input");
   int counter=0; size_t start_counter = 0;
+  size_t line_number = 0;
   size_t CreateMolecule = 0; double idealrosen = 0.0; double fugacoeff = 0.0; double Molfrac = 1.0; //Set Molfraction = 1.0
   bool temp_hasfracmol = false;
   int  LambdaType = SHI_MAGINN;
 
   TMMC temp_tmmc;
+  AdaptiveComponentTarget adaptiveTarget;
 
   std::string start_string = "Component " + std::to_string(AdsorbateComponent); //start when reading "Component 0" for example
   std::string terminate_string="Component " + std::to_string(Terminatecomponent);     //terminate when reading "Component 1", if we are interested in Component 0
   //first get the line number of the destinated component
-  while (std::getline(file, str))
+  while (ReadTrackedLine(file, str, line_number, input_scope))
   {
     if(str.find(start_string, 0) != std::string::npos){break;}
     start_counter++;
@@ -2136,11 +2362,12 @@ void read_component_values_from_simulation_input(Variables& Vars, Components& Sy
   //printf("%s starts at line number %zu\n", start_string.c_str(), start_counter); 
   file.clear();
   file.seekg(0); 
+  line_number = 0;
   std::string MolName;
 
   bool AlreadyProcessedMLPseudoAtoms = false;
   
-  while (std::getline(file, str))
+  while (ReadTrackedLine(file, str, line_number, input_scope))
   {
     if(str.find(terminate_string, 0) != std::string::npos)
     {
@@ -2344,6 +2571,16 @@ void read_component_values_from_simulation_input(Variables& Vars, Components& Sy
         Split_Tab_Space(termsScannedLined, str); 
         sscanf(termsScannedLined[1 + BoxIndex].c_str(), "%zu", &CreateMolecule);
       }
+      if (str.find("MonitorHenryCoefficient", 0) != std::string::npos)
+      {
+        Split_Tab_Space(termsScannedLined, str);
+        adaptiveTarget.MonitorHenryCoefficient = caseInSensStringCompare(termsScannedLined[1], "yes");
+      }
+      if (str.find("MonitorHeatOfAdsorption", 0) != std::string::npos)
+      {
+        Split_Tab_Space(termsScannedLined, str);
+        adaptiveTarget.MonitorHeatOfAdsorption = caseInSensStringCompare(termsScannedLined[1], "yes");
+      }
       if (str.find("BlockPockets", 0) != std::string::npos)
       {
         Split_Tab_Space(termsScannedLined, str);
@@ -2428,9 +2665,12 @@ void read_component_values_from_simulation_input(Variables& Vars, Components& Sy
   //Zhao's note: for now, Molfraction = 1.0
   SystemComponents.MolFraction.push_back(Molfrac);
   SystemComponents.hasfractionalMolecule.push_back(temp_hasfracmol);
+  size_t actualComponentIndex = SystemComponents.NComponents.y + AdsorbateComponent;
+  if(SystemComponents.AdaptiveTargets.size() <= actualComponentIndex)
+    SystemComponents.AdaptiveTargets.resize(actualComponentIndex + 1);
+  SystemComponents.AdaptiveTargets[actualComponentIndex] = adaptiveTarget;
   
   // Initialize block pocket vectors (already done above if BlockPockets was specified)
-  size_t actualComponentIndex = SystemComponents.NComponents.y + AdsorbateComponent;
   if(SystemComponents.UseBlockPockets.size() <= actualComponentIndex)
   {
     SystemComponents.UseBlockPockets.resize(actualComponentIndex + 1, false);
@@ -2556,10 +2796,12 @@ auto generate_filter_lambda(std::vector<int>& A, int Criterion, std::vector<int>
 
 void ReadRestartInputFileType(Components& SystemComponents)
 {
+  InputFileScope input_scope("simulation.input");
   std::vector<std::string> termsScannedLined{};
   std::string str;
-  std::ifstream file("simulation.input");
-  while (std::getline(file, str))
+  std::ifstream file = OpenTextFileOrThrow("simulation.input");
+  size_t line_number = 0;
+  while (ReadTrackedLine(file, str, line_number, input_scope))
   {
     if (str.find("RestartInputFileType", 0) != std::string::npos)
     {
@@ -2587,11 +2829,13 @@ void ReadRestartInputFileType(Components& SystemComponents)
 
 static inline size_t ReadLMPDataStartComponent(Components& SystemComponents)
 {
+  InputFileScope input_scope("simulation.input");
   std::vector<std::string> termsScannedLined{};
   std::string str;
-  std::ifstream file("simulation.input");
+  std::ifstream file = OpenTextFileOrThrow("simulation.input");
   size_t StartComponent = 0;
-  while (std::getline(file, str))
+  size_t line_number = 0;
+  while (ReadTrackedLine(file, str, line_number, input_scope))
   {
     if (str.find("LMPData_Comp_to_Start_with", 0) != std::string::npos)
     {
@@ -2634,7 +2878,8 @@ void LMPDataFileParser(Boxsize& Box, Components& SystemComponents)
   std::vector<std::string> termsScannedLined{};
   //Determine framework name (file name)//
   std::string Filename = "LMPDataInitial/System_0/init.data";
-  std::ifstream file(Filename);
+  InputFileScope input_scope(Filename);
+  std::ifstream file = OpenTextFileOrThrow(Filename);
   std::filesystem::path pathfile = std::filesystem::path(Filename);
   if (!std::filesystem::exists(pathfile))
   {
@@ -2654,13 +2899,14 @@ void LMPDataFileParser(Boxsize& Box, Components& SystemComponents)
   size_t counter = 0; size_t atom_count = 0;
   size_t total_atoms = 0;
   size_t start_read_line = 0;
+  size_t line_number = 0;
   if(SystemComponents.Read_BoxsizeRestart)
   {
     //printf("Reading boxsizes from LMPData Initial file.\n");
     //printf("***WARNING***All box sizes are shifted to start from zero!\n");
     bool foundx = false; bool foundy = false; bool foundz = false; bool found_xy_xz_yz = false;
     bool reached_atom_types = false;
-    while (std::getline(file, str))
+    while (ReadTrackedLine(file, str, line_number, input_scope))
     {
       if((str.find("xlo", 0) != std::string::npos) && (str.find("xhi", 0) != std::string::npos))
       {
@@ -2708,8 +2954,9 @@ void LMPDataFileParser(Boxsize& Box, Components& SystemComponents)
     if(!Box.Cubic) //printf("The Simulation Box is NOT Cubic\n");
     file.clear();
     file.seekg(0);
+    line_number = 0;
   }
-  while (std::getline(file, str))
+  while (ReadTrackedLine(file, str, line_number, input_scope))
   {
     if (counter < 3 && str.find("toms", 0) != std::string::npos)
     {
@@ -2818,13 +3065,15 @@ void RestartFileParser(Boxsize& Box, Components& SystemComponents)
   std::vector<std::string> termsScannedLined{};
   //Determine framework name (file name)//
   std::string Filename = "RestartInitial/System_0/restartfile";
-  std::ifstream file(Filename);
+  InputFileScope input_scope(Filename);
+  std::ifstream file = OpenTextFileOrThrow(Filename);
   std::filesystem::path pathfile = std::filesystem::path(Filename);
   if (!std::filesystem::exists(pathfile))
   {
     throw std::runtime_error("RestartInitial file not found\n");
   }
   size_t counter = 0;
+  size_t line_number = 0;
   
   //Zhao's note: MolID in our Atoms struct are relative IDs, for one component, they start with zero.
   //Yet, in Restart file, it start with an arbitrary number (equal to number of previous component molecules)
@@ -2833,7 +3082,7 @@ void RestartFileParser(Boxsize& Box, Components& SystemComponents)
   for(size_t i = SystemComponents.NComponents.y; i < SystemComponents.NComponents.x; i++)
   {
     size_t start = 0;
-    while (std::getline(file, str))
+    while (ReadTrackedLine(file, str, line_number, input_scope))
     {
       //find range of the part we need to read// 
       if (str.find("Components " + std::to_string(i - SystemComponents.NComponents.y), 0) != std::string::npos) 
@@ -2845,9 +3094,10 @@ void RestartFileParser(Boxsize& Box, Components& SystemComponents)
     }
     file.clear();
     file.seekg(0);
+    line_number = 0;
     //printf("RASPA Restart: Now reading Component Info\n");
     //Start reading//
-    while (std::getline(file, str))
+    while (ReadTrackedLine(file, str, line_number, input_scope))
     {
       if (str.find("Fractional-molecule-id component " + std::to_string(i - SystemComponents.NComponents.y), 0) != std::string::npos)
       {
@@ -2903,9 +3153,10 @@ void RestartFileParser(Boxsize& Box, Components& SystemComponents)
     }
     file.clear(); 
     file.seekg(0);
+    line_number = 0;
     //Start reading atom positions and other information//
     start = 0; counter = 0;
-    while (std::getline(file, str))
+    while (ReadTrackedLine(file, str, line_number, input_scope))
     {
       if (str.find("Component: " + std::to_string(i - SystemComponents.NComponents.y), 0) != std::string::npos)
       {
@@ -2933,6 +3184,7 @@ void RestartFileParser(Boxsize& Box, Components& SystemComponents)
     counter  = 0;
     file.clear();
     file.seekg(0);
+    line_number = 0;
     if(SystemComponents.NumberOfMolecule_for_Component[i] == 0) continue;
     size_t interval = SystemComponents.NumberOfMolecule_for_Component[i]* SystemComponents.Moleculesize[i];
     double3 pos[SystemComponents.NumberOfMolecule_for_Component[i]       * SystemComponents.Moleculesize[i]];
@@ -2943,7 +3195,7 @@ void RestartFileParser(Boxsize& Box, Components& SystemComponents)
     size_t  MolID[SystemComponents.NumberOfMolecule_for_Component[i]     * SystemComponents.Moleculesize[i]];
 
     size_t atom=0;
-    while (std::getline(file, str))
+    while (ReadTrackedLine(file, str, line_number, input_scope))
     {
       //Read positions, Type and MolID//
       //Position: 0, velocity: 1, force: 2, charge: 3, scaling: 4
@@ -3038,10 +3290,12 @@ void RestartFileParser(Boxsize& Box, Components& SystemComponents)
 // Read ExcessVolume and Helium Void Fraction //
 void ReadVoidFraction(Variables& Vars)
 {
+  InputFileScope input_scope("simulation.input");
   std::vector<std::string> termsScannedLined{};
   std::string str;
-  std::ifstream file("simulation.input");
-  while (std::getline(file, str))
+  std::ifstream file = OpenTextFileOrThrow("simulation.input");
+  size_t line_number = 0;
+  while (ReadTrackedLine(file, str, line_number, input_scope))
   {
     if (str.find("HeliumVoidFraction", 0) != std::string::npos)
     {
@@ -3059,10 +3313,12 @@ void ReadVoidFraction(Variables& Vars)
 
 void ReadDNNModelSetup(Components& SystemComponents)
 {
+  InputFileScope input_scope("simulation.input");
   std::vector<std::string> termsScannedLined{};
   std::string str;
-  std::ifstream file("simulation.input");
-  while (std::getline(file, str))
+  std::ifstream file = OpenTextFileOrThrow("simulation.input");
+  size_t line_number = 0;
+  while (ReadTrackedLine(file, str, line_number, input_scope))
   {
     if (str.find("UseDNNforHostGuest", 0) != std::string::npos)
     {
@@ -3079,9 +3335,10 @@ void ReadDNNModelSetup(Components& SystemComponents)
 
   file.clear();
   file.seekg(0);
+  line_number = 0;
 
   bool foundMethod = false; bool DNNUnitFound = false;
-  while (std::getline(file, str))
+  while (ReadTrackedLine(file, str, line_number, input_scope))
   {
     if (str.find("DNNMethod", 0) != std::string::npos)
     {
@@ -3134,14 +3391,13 @@ void ReadDNNModelSetup(Components& SystemComponents)
 // Coordinate conversion and replication will be handled in CheckBlockedPosition using Box
 void ReadBlockPockets(Components& SystemComponents, size_t component, const std::string& filename)
 {
-  std::ifstream file(filename);
-  if(!file.is_open())
-  {
-    throw std::runtime_error("Cannot open block pocket file: " + filename);
-  }
+  InputFileScope input_scope(filename);
+  std::ifstream file = OpenTextFileOrThrow(filename);
   
   size_t numPockets;
   file >> numPockets;
+  if(!file.good())
+    throw std::runtime_error("Failed to read the number of block pockets");
   
   // Ensure vectors are large enough
   if(component >= SystemComponents.BlockPocketCenters.size())
@@ -3163,6 +3419,8 @@ void ReadBlockPockets(Components& SystemComponents, size_t component, const std:
     double3 center;
     double radius;
     file >> center.x >> center.y >> center.z >> radius;
+    if(!file.good())
+      throw std::runtime_error("Failed to read block pocket entry " + std::to_string(i));
     SystemComponents.BlockPocketCenters[component].push_back(center);
     SystemComponents.BlockPocketRadii[component].push_back(radius);
   }

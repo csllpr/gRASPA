@@ -1,0 +1,43 @@
+============================= test session starts ==============================
+platform linux -- Python 3.11.11, pytest-9.0.2, pluggy-1.5.0
+rootdir: /home/csllpr/source/gRASPA/Examples
+collected 1 item
+
+test_examples.py checking CO2-MFI/output.txt
+
+This simulation in CO2-MFI folder has a total energy drift of 0.0 (internal unit, 10 J/mol)
+
+This simulation in CO2-MFI folder has a GPU final energy drift of -4e-05 (internal unit, 10 J/mol)
+
+This simulation in CO2-MFI folder took 9.356732 seconds
+checking Methane-TMMC/output.txt
+
+This simulation in Methane-TMMC folder has a total energy drift of -0.0 (internal unit, 10 J/mol)
+
+This simulation in Methane-TMMC folder has a GPU final energy drift of 0.0 (internal unit, 10 J/mol)
+
+This simulation in Methane-TMMC folder took 3.766108 seconds
+checking Bae-Mixture/output.txt
+
+This simulation in Bae-Mixture folder has a total energy drift of -0.0 (internal unit, 10 J/mol)
+
+This simulation in Bae-Mixture folder has a GPU final energy drift of 0.0 (internal unit, 10 J/mol)
+
+This simulation in Bae-Mixture folder took 112.480254 seconds
+checking NU2000-pX-LinkerRotations/output.txt
+
+This simulation in NU2000-pX-LinkerRotations folder has a total energy drift of -0.00501 (internal unit, 10 J/mol)
+
+This simulation in NU2000-pX-LinkerRotations folder has a GPU final energy drift of 0.00027 (internal unit, 10 J/mol)
+
+This simulation in NU2000-pX-LinkerRotations folder took 8.242134 seconds
+checking Tail-Correction/output.txt
+
+This simulation in Tail-Correction folder has a total energy drift of -0.0 (internal unit, 10 J/mol)
+
+This simulation in Tail-Correction folder has a GPU final energy drift of 0.0 (internal unit, 10 J/mol)
+
+This simulation in Tail-Correction folder took 1.62691 seconds
+.
+
+============================== 1 passed in 0.09s ===============================
