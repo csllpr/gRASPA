@@ -370,6 +370,14 @@ void read_simulation_input(Variables& Vars, bool *ReadRestart, bool *SameFramewo
         Vars.TempWidom.Useflag = true;
       }
     }
+    if (str.find("UseFastHostRNG", 0) != std::string::npos)
+    {
+      Split_Tab_Space(termsScannedLined, str);
+      if(caseInSensStringCompare(termsScannedLined[1], "yes"))
+      {
+        Vars.UseFastHostRNG = true;
+      }
+    }
   
     if (str.find("RandomSeed", 0) != std::string::npos)
     {

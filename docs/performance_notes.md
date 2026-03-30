@@ -27,6 +27,20 @@ UseGPUReduction no
 
 That keeps the older host-side final summation behavior unless the user explicitly opts in.
 
+There is also an opt-in host RNG path:
+
+```text
+UseFastHostRNG yes
+```
+
+The default remains:
+
+```text
+UseFastHostRNG no
+```
+
+That keeps the historical `std::rand()`-based host RNG behavior unless the user explicitly opts in to the faster generator.
+
 ## What changed internally
 
 The recent runtime work in `src_clean/` did four things:
@@ -39,6 +53,7 @@ The recent runtime work in `src_clean/` did four things:
 6. Replaced the DNN adsorbate-mask managed allocation with an explicit host pointer plus device mirror.
 7. Replaced the `Vars.Sims` managed wrapper with a plain host allocation and removed the last kernels that depended on passing `Simulations` itself into device code.
 8. Reduced small but repeated Widom-side CPU overhead by reusing the existing shifted-Boltzmann scratch vector, shrinking the first-bead trial-position kernel arguments, and removing the stale random-setup debug launch.
+9. Added an opt-in faster host-side uniform RNG backend for CPU-side move selection and host random-buffer generation.
 
 ## Intended usage
 
@@ -53,6 +68,16 @@ Leave it at `no` when:
 * you want the historical default path
 * you are comparing against older local runs and want to minimize runtime-path changes
 
+Use `UseFastHostRNG yes` when:
+
+* the workload is CPU-limited by host-side move orchestration or random-buffer refill
+* you are optimizing throughput rather than same-seed trajectory identity
+
+Leave it at `no` when:
+
+* you want the historical host RNG path
+* you need to keep old same-seed trajectories comparable
+
 ## Validation status
 
 The current implementation was checked against the designated example suite and the existing `pytest` example test.
@@ -66,6 +91,7 @@ On the local GPU 1 benchmark setup used during this refactor work:
 * the Widom GPU-reduction path gave the larger gain
 * the added Ewald move-delta reduction was smaller but still positive
 * the added single-body / lambda move-energy reduction was positive on a charged, move-heavy Bae benchmark
+* `UseFastHostRNG yes` improved the standard 16-way Widom benchmark by about `1.0249x`
 * removing explicit host/device rendezvous points in the hot path was not a win under many-process MPS load and was reverted
 * converting `Vars.Sims` to a host wrapper was throughput-neutral to slightly positive on the standard 16-way Widom benchmark while also removing the last `cudaMallocManaged(...)` dependency in `src_clean/`
 * the Widom-side CPU-overhead cleanup produced a further small gain on the same 16-way benchmark
@@ -74,6 +100,7 @@ So the current recommendation is:
 
 * keep explicit sync points where the host immediately consumes move results
 * use `UseGPUReduction yes` for throughput-oriented Widom / charged workloads
+* benchmark `UseFastHostRNG yes` on throughput-focused runs where same-seed identity is not required
 * benchmark with your real workload before making it the default in production inputs
 
 ## Known limits

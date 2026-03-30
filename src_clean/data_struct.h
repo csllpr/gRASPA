@@ -18,6 +18,7 @@
 #define BLOCKSIZE 1024
 #define DEFAULTTHREAD 128
 double Get_Uniform_Random();
+void ConfigureHostUniformRNG(int seed, bool use_fast);
 
 inline int CheckedSizeToInt(size_t value, const char* label)
 {
@@ -1520,7 +1521,6 @@ struct RandomNumber
   }
   void Setup(size_t SIZE)
   {
-    std::srand(RANDOMSEED); //Zhao's note: RANDOMSEED is read when reading the input file//
     randomsize = SIZE;
     AllocateRandom();
     DeviceRandom();
@@ -1576,6 +1576,7 @@ struct Variables
   int SimulationMode = INITIALIZATION;
   std::string Mode   = "INITIALIZATION";
   int BlockAverageSize = 1; //# of cycle/steps each block has//
+  bool UseFastHostRNG = false;
   //Simulation Structs//
   Units Constants; //Physical constants for the simulation//
 

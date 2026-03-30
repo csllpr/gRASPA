@@ -140,6 +140,7 @@ Variables Initialize(void) //for pybind
   //////////////////////////
   // SETUP RANDOM NUMBERS //
   //////////////////////////
+  ConfigureHostUniformRNG(Vars.Random.RANDOMSEED, Vars.UseFastHostRNG);
   Vars.Random.Setup(333334);
 
   //if true, then we can simulate the same framework at different T/P//
