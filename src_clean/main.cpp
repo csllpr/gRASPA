@@ -307,16 +307,13 @@ Variables Initialize(void) //for pybind
       Vars.SystemComponents[a].DNNEnergyConversion = Comp_for_DNN_Model[a].DNNEnergyConversion;
       //Zhao's note: Hard-coded component here//
       //Assuming component `1` is just the 1st adsorbate species//
-      std::vector<bool>ConsiderThisAdsorbateAtom(Vars.SystemComponents[a].Moleculesize[1], false);
+      cudaMalloc(&Vars.SystemComponents[a].device_ConsiderThisAdsorbateAtom, sizeof(bool) * Vars.SystemComponents[a].Moleculesize[1]);
+      cudaMemcpy(Vars.SystemComponents[a].device_ConsiderThisAdsorbateAtom,
+                 Vars.SystemComponents[a].ConsiderThisAdsorbateAtom,
+                 sizeof(bool) * Vars.SystemComponents[a].Moleculesize[1],
+                 cudaMemcpyHostToDevice);
       for(size_t y = 0; y < Vars.SystemComponents[a].Moleculesize[1]; y++)
       {
-        ConsiderThisAdsorbateAtom[y] = Vars.SystemComponents[a].ConsiderThisAdsorbateAtom[y];
-      }
-      //Declare a new, cuda managed mem (accessible on both CPU/GPU) to overwrite the original  bool mem
-      cudaMallocManaged(&Vars.SystemComponents[a].ConsiderThisAdsorbateAtom, sizeof(bool) * Vars.SystemComponents[a].Moleculesize[1]);
-      for(size_t y = 0; y < Vars.SystemComponents[a].Moleculesize[1]; y++)
-      {
-        Vars.SystemComponents[a].ConsiderThisAdsorbateAtom[y] = ConsiderThisAdsorbateAtom[y];
         printf("Atom %zu, Consider? %s\n", y, Vars.SystemComponents[a].ConsiderThisAdsorbateAtom[y] ? "true" : "false");
       }
       //Test reading Tensorflow model//

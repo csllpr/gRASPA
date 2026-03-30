@@ -36,6 +36,7 @@ The recent runtime work in `src_clean/` did four things:
 3. Added device-side Ewald delta reduction so the host copies back only the final same-type / cross-type pair when GPU reduction is enabled.
 4. Added device-side final reduction for the single-body / CBCF lambda VDW+real move-energy path.
 5. Reserved explicit tail scratch inside `Sim.Blocksum` and preserved that tail during `Blocksum` growth.
+6. Replaced the DNN adsorbate-mask managed allocation with an explicit host pointer plus device mirror.
 
 ## Intended usage
 
@@ -76,7 +77,7 @@ So the current recommendation is:
 These changes do not solve the larger architectural limits by themselves:
 
 * one single Monte Carlo chain still has a serial acceptance frontier
-* the code still has remaining managed-memory / host-orchestration overhead outside these reduction paths
+* the code still has remaining managed-memory / host-orchestration overhead outside these reduction paths, especially `Vars.Sims`
 * external job concurrency can still saturate at a lower-throughput point if too many jobs share one GPU
 
 The next likely optimization areas are:

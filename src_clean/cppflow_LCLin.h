@@ -198,35 +198,35 @@ std::vector<std::vector<double>> CalculatePairDistances_GPU(Simulations& Sim, Co
   {
     case TOTAL:
     {  
-      CalculatePairDistances<<<Nblock, Nthread>>>(Sim.Box, Sim.d_a, Sim.New, SystemComponents.ConsiderThisAdsorbateAtom, SystemComponents.Moleculesize[ads_comp], NMol * SystemComponents.Moleculesize[ads_comp], SystemComponents.device_InverseIndexList, Sim.Blocksum, NFrameworkAtoms, false);
+      CalculatePairDistances<<<Nblock, Nthread>>>(Sim.Box, Sim.d_a, Sim.New, SystemComponents.device_ConsiderThisAdsorbateAtom, SystemComponents.Moleculesize[ads_comp], NMol * SystemComponents.Moleculesize[ads_comp], SystemComponents.device_InverseIndexList, Sim.Blocksum, NFrameworkAtoms, false);
       break;
     }
     case OLD:
     {
-      CalculatePairDistances<<<Nblock, Nthread>>>(Sim.Box, Sim.d_a, Sim.Old, SystemComponents.ConsiderThisAdsorbateAtom, SystemComponents.Moleculesize[ads_comp], 0, SystemComponents.device_InverseIndexList, Sim.Blocksum, NFrameworkAtoms, true);
+      CalculatePairDistances<<<Nblock, Nthread>>>(Sim.Box, Sim.d_a, Sim.Old, SystemComponents.device_ConsiderThisAdsorbateAtom, SystemComponents.Moleculesize[ads_comp], 0, SystemComponents.device_InverseIndexList, Sim.Blocksum, NFrameworkAtoms, true);
       break;
     }
     case NEW:
     {
-      CalculatePairDistances<<<Nblock, Nthread>>>(Sim.Box, Sim.d_a, Sim.New, SystemComponents.ConsiderThisAdsorbateAtom, SystemComponents.Moleculesize[ads_comp], 0, SystemComponents.device_InverseIndexList, Sim.Blocksum, NFrameworkAtoms, true);
+      CalculatePairDistances<<<Nblock, Nthread>>>(Sim.Box, Sim.d_a, Sim.New, SystemComponents.device_ConsiderThisAdsorbateAtom, SystemComponents.Moleculesize[ads_comp], 0, SystemComponents.device_InverseIndexList, Sim.Blocksum, NFrameworkAtoms, true);
       break;
     }
     case REINSERTION_OLD:
     {
       size_t skip = 0;
-      CalculatePairDistances<<<Nblock, Nthread>>>(Sim.Box, Sim.d_a, Sim.Old, SystemComponents.ConsiderThisAdsorbateAtom, SystemComponents.Moleculesize[ads_comp], skip, SystemComponents.device_InverseIndexList, Sim.Blocksum, NFrameworkAtoms, true);
+      CalculatePairDistances<<<Nblock, Nthread>>>(Sim.Box, Sim.d_a, Sim.Old, SystemComponents.device_ConsiderThisAdsorbateAtom, SystemComponents.Moleculesize[ads_comp], skip, SystemComponents.device_InverseIndexList, Sim.Blocksum, NFrameworkAtoms, true);
       break;
     }
     case REINSERTION_NEW:
     {
       size_t skip = SystemComponents.Moleculesize[ads_comp];
-      CalculatePairDistances<<<Nblock, Nthread>>>(Sim.Box, Sim.d_a, Sim.Old, SystemComponents.ConsiderThisAdsorbateAtom, SystemComponents.Moleculesize[ads_comp], skip, SystemComponents.device_InverseIndexList, Sim.Blocksum, NFrameworkAtoms, true);
+      CalculatePairDistances<<<Nblock, Nthread>>>(Sim.Box, Sim.d_a, Sim.Old, SystemComponents.device_ConsiderThisAdsorbateAtom, SystemComponents.Moleculesize[ads_comp], skip, SystemComponents.device_InverseIndexList, Sim.Blocksum, NFrameworkAtoms, true);
       break;
     }
     case DNN_INSERTION: case DNN_DELETION:
     {
       size_t skip = 0;
-      CalculatePairDistances<<<Nblock, Nthread>>>(Sim.Box, Sim.d_a, Sim.Old, SystemComponents.ConsiderThisAdsorbateAtom, SystemComponents.Moleculesize[ads_comp], skip, SystemComponents.device_InverseIndexList, Sim.Blocksum, NFrameworkAtoms, true);
+      CalculatePairDistances<<<Nblock, Nthread>>>(Sim.Box, Sim.d_a, Sim.Old, SystemComponents.device_ConsiderThisAdsorbateAtom, SystemComponents.Moleculesize[ads_comp], skip, SystemComponents.device_InverseIndexList, Sim.Blocksum, NFrameworkAtoms, true);
       break;
     }
   }
