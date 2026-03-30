@@ -6,9 +6,9 @@
 #include "read_data.h"
 
 
-static inline size_t SelectTrialPosition(std::vector<double>& LogBoltzmannFactors) //In Zhao's code, LogBoltzmannFactors = Rosen
+static inline size_t SelectTrialPosition(std::vector<double>& LogBoltzmannFactors, std::vector<double>& ShiftedBoltzmannFactors) //In Zhao's code, LogBoltzmannFactors = Rosen
 {
-    std::vector<double> ShiftedBoltzmannFactors(LogBoltzmannFactors.size());
+    ShiftedBoltzmannFactors.resize(LogBoltzmannFactors.size());
 
     // Energies are always bounded from below [-U_max, infinity>
     // Find the lowest energy value, i.e. the largest value of (-Beta U)
@@ -185,11 +185,8 @@ inline void CBMC_PairwiseInteractions(Variables& Vars, size_t systemId, Componen
 }
 
 
-__global__ void get_random_trial_position(Boxsize Box, Atoms* d_a, Atoms NewMol, bool* device_flag, RandomNumber Random, size_t start_position, size_t SelectedComponent, size_t MolID, int MoveType, double2 proposed_scale)
+__global__ void get_random_trial_position(Boxsize Box, Atoms* d_a, Atoms NewMol, bool* device_flag, double3* random, size_t offset, size_t start_position, size_t SelectedComponent, size_t MolID, int MoveType, double2 proposed_scale)
 {
-  double3* random = Random.device_random;
-  size_t   offset = Random.offset;
-
   const size_t i = blockIdx.x * blockDim.x + threadIdx.x;
   const size_t random_index = i + offset;
   const Atoms AllData = d_a[SelectedComponent];
@@ -382,6 +379,7 @@ static inline void CBMC_FirstBead_Finish(Variables& Vars, size_t systemId, CBMC_
   int& MoveType = CBMC.MoveType;
 
   std::vector<double>&Rosen        = SystemComponents.Rosen;
+  std::vector<double>&ShiftedBoltzmannFactors = SystemComponents.ShiftedBoltzmannFactors;
   std::vector<MoveEnergy>&energies = SystemComponents.TrialEnergies;
   std::vector<size_t>&Trialindex   = SystemComponents.Trialindex;
 
@@ -398,7 +396,7 @@ static inline void CBMC_FirstBead_Finish(Variables& Vars, size_t systemId, CBMC_
     case CBMC_INSERTION: case REINSERTION_INSERTION:
     {
       if(Rosen.size() == 0) break;
-      SelectedTrial = SelectTrialPosition(Rosen);
+      SelectedTrial = SelectTrialPosition(Rosen, ShiftedBoltzmannFactors);
       for(size_t a = 0; a < Rosen.size(); a++) Rosen[a] = std::exp(Rosen[a]);
       Rosenbluth =std::accumulate(Rosen.begin(), Rosen.end(), decltype(SystemComponents.Rosen)::value_type(0));
       if(Rosenbluth < 1e-150) break;
@@ -503,7 +501,7 @@ inline void Widom_Move_FirstBead_PARTIAL(Variables& Vars, size_t systemId, CBMC_
 
   //printf("MoveType: %d, Ntrial: %zu, SelectedMolID: %zu, start_position: %zu, selectedComponent: %zu\n", MoveType, NumberOfTrials, SelectedMolID, start_position, SelectedComponent);
 
-  get_random_trial_position<<<1,NumberOfTrials>>>(Sims.Box, Sims.d_a, Sims.New, Sims.device_flag, Random, start_position, SelectedComponent, SelectedMolID, MoveType, proposed_scale); checkCUDAError("error getting random trials");
+  get_random_trial_position<<<1,NumberOfTrials>>>(Sims.Box, Sims.d_a, Sims.New, Sims.device_flag, Random.device_random, Random.offset, start_position, SelectedComponent, SelectedMolID, MoveType, proposed_scale); checkCUDAError("error getting random trials");
   Random.Update(NumberOfTrials);
 
   // Check block pockets for insertion moves (matching RASPA2)
@@ -550,6 +548,7 @@ inline void Widom_Move_Chain_PARTIAL(Variables& Vars, size_t systemId, CBMC_Vari
   bool Goodconstruction = false; size_t SelectedTrial = 0; double Rosenbluth = 0.0;
 
   std::vector<double>& Rosen        = SystemComponents.Rosen;
+  std::vector<double>& ShiftedBoltzmannFactors = SystemComponents.ShiftedBoltzmannFactors;
   std::vector<MoveEnergy>& energies = SystemComponents.TrialEnergies;
   std::vector<size_t>& Trialindex   = SystemComponents.Trialindex;
   Rosen.clear(); energies.clear(); Trialindex.clear();
@@ -598,7 +597,7 @@ inline void Widom_Move_Chain_PARTIAL(Variables& Vars, size_t systemId, CBMC_Vari
     case CBMC_INSERTION: case REINSERTION_INSERTION: case IDENTITY_SWAP_NEW:
     {
       if(Rosen.size() == 0) break;
-      SelectedTrial = SelectTrialPosition(Rosen); 
+      SelectedTrial = SelectTrialPosition(Rosen, ShiftedBoltzmannFactors); 
 
       for(size_t a = 0; a < Rosen.size(); a++) Rosen[a] = std::exp(Rosen[a]);
       Rosenbluth =std::accumulate(Rosen.begin(), Rosen.end(), decltype(SystemComponents.Rosen)::value_type(0));

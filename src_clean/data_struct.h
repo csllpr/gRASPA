@@ -1469,13 +1469,6 @@ struct WidomStruct
   size_t              TrialEnergyOffset = 0;            //tail offset in Blocksum for per-trial reduced energies
 };
 
-static __global__ void Aaccess_device_random(double3* device_random)
-{
-  device_random[0] = {2.3, 4.5, 6.7};
-  printf("device_random[0] = %.5f %.5f %.5f\n", device_random[0].x, device_random[0].y, device_random[0].z);
-}
-
-
 struct RandomNumber
 {
   double3* host_random;
@@ -1515,8 +1508,6 @@ struct RandomNumber
   {
     cudaMalloc(&device_random, randomsize * sizeof(double3));
     ResetRandom();
-    Aaccess_device_random<<<1,1>>>(device_random);
-    cudaMemcpy(host_random, device_random, randomsize * sizeof(double3), cudaMemcpyDeviceToHost);
   }
   
   void Check(size_t change) //check the usage of random numbers, if used up, regenerate//

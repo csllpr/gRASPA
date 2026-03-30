@@ -11,7 +11,6 @@ inline void SingleBody_Prepare(Variables& Vars, size_t systemId)
 {
   Components& SystemComponents = Vars.SystemComponents[systemId];
   Simulations& Sims            = Vars.Sims[systemId];
-  ForceField& FF               = Vars.device_FF;
   RandomNumber& Random         = Vars.Random;
   WidomStruct& Widom           = Vars.Widom[systemId];
 
