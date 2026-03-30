@@ -57,6 +57,7 @@ The recent runtime work in `src_clean/` did four things:
 10. Packed the Widom overlap validity bit into the GPU-reduced per-trial payload so the `UseGPUReduction yes` path no longer needs a separate host copy of the trial flags.
 11. Changed the opt-in Ewald move-delta path so the Fourier kernel can accumulate same-type and cross-type totals directly into the reduced scratch, removing the extra GPU reduction launch from `UseGPUReduction yes`.
 12. Changed the opt-in Widom VDW+real trial-energy path so the main pair-energy kernel accumulates directly into the per-trial reduced payload, removing the extra GPU reduction launch from `UseGPUReduction yes`.
+13. Increased the host/device random-buffer size used by `UseFastHostRNG yes` so the throughput-oriented path refills and copies the host random buffer less often.
 
 ## Intended usage
 
@@ -98,6 +99,7 @@ On the local GPU 1 benchmark setup used during this refactor work:
 * packing the Widom validity bit into the reduced trial payload improved the 16-way `UseGPUReduction yes` + `UseFastHostRNG yes` benchmark by about `1.2052x` versus the immediately previous build
 * direct Ewald pair accumulation in the opt-in path improved the same 16-way `UseGPUReduction yes` + `UseFastHostRNG yes` benchmark by about `1.0665x` versus the previous implementation
 * direct Widom per-trial accumulation in the opt-in path improved the same 16-way `UseGPUReduction yes` + `UseFastHostRNG yes` benchmark by about `1.0492x` versus the previous implementation
+* increasing the fast-RNG buffer size improved the same 16-way `UseGPUReduction yes` + `UseFastHostRNG yes` benchmark by about `1.0175x` versus the immediately previous build
 * removing explicit host/device rendezvous points in the hot path was not a win under many-process MPS load and was reverted
 * converting `Vars.Sims` to a host wrapper was throughput-neutral to slightly positive on the standard 16-way Widom benchmark while also removing the last `cudaMallocManaged(...)` dependency in `src_clean/`
 * the Widom-side CPU-overhead cleanup produced a further small gain on the same 16-way benchmark

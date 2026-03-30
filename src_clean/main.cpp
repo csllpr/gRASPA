@@ -141,7 +141,9 @@ Variables Initialize(void) //for pybind
   // SETUP RANDOM NUMBERS //
   //////////////////////////
   ConfigureHostUniformRNG(Vars.Random.RANDOMSEED, Vars.UseFastHostRNG);
-  Vars.Random.Setup(333334);
+  // The fast host RNG path is throughput-oriented, so keep a larger device buffer to reduce refill copies.
+  const size_t random_buffer_size = Vars.UseFastHostRNG ? 1000000 : 333334;
+  Vars.Random.Setup(random_buffer_size);
 
   //if true, then we can simulate the same framework at different T/P//
   //If false, then we can do Gibbs (where a box is empty)//
