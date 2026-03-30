@@ -205,10 +205,10 @@ inline void Prepare_Widom(WidomStruct& Widom, Boxsize Box, Simulations& Sims, Co
   if(fourier_size > vdw_real_size) blocksum_size = fourier_size;
   Sims.UseGPUReduction = Widom.UseGPUReduction;
   Widom.TrialEnergyOffset = blocksum_size;
-  blocksum_size += 4 * MaxTrial;
+  blocksum_size += 5 * MaxTrial;
   Sims.ReductionScratchOffset = blocksum_size;
   blocksum_size += 6;
-  Sims.BlocksumTailSize = 4 * MaxTrial + 6;
+  Sims.BlocksumTailSize = 5 * MaxTrial + 6;
 
   //Allocate temporary space for reinsertion//
   size_t MaxAdsorbateMolsize = *std::max_element(SystemComponents.Moleculesize.begin() + 1, SystemComponents.Moleculesize.end());;

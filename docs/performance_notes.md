@@ -54,6 +54,7 @@ The recent runtime work in `src_clean/` did four things:
 7. Replaced the `Vars.Sims` managed wrapper with a plain host allocation and removed the last kernels that depended on passing `Simulations` itself into device code.
 8. Reduced small but repeated Widom-side CPU overhead by reusing the existing shifted-Boltzmann scratch vector, shrinking the first-bead trial-position kernel arguments, and removing the stale random-setup debug launch.
 9. Added an opt-in faster host-side uniform RNG backend for CPU-side move selection and host random-buffer generation.
+10. Packed the Widom overlap validity bit into the GPU-reduced per-trial payload so the `UseGPUReduction yes` path no longer needs a separate host copy of the trial flags.
 
 ## Intended usage
 
@@ -92,15 +93,19 @@ On the local GPU 1 benchmark setup used during this refactor work:
 * the added Ewald move-delta reduction was smaller but still positive
 * the added single-body / lambda move-energy reduction was positive on a charged, move-heavy Bae benchmark
 * `UseFastHostRNG yes` improved the standard 16-way Widom benchmark by about `1.0249x`
+* packing the Widom validity bit into the reduced trial payload improved the 16-way `UseGPUReduction yes` + `UseFastHostRNG yes` benchmark by about `1.2052x` versus the immediately previous build
 * removing explicit host/device rendezvous points in the hot path was not a win under many-process MPS load and was reverted
 * converting `Vars.Sims` to a host wrapper was throughput-neutral to slightly positive on the standard 16-way Widom benchmark while also removing the last `cudaMallocManaged(...)` dependency in `src_clean/`
 * the Widom-side CPU-overhead cleanup produced a further small gain on the same 16-way benchmark
+
+An `nsys` short-run profile on the throughput-oriented Widom benchmark also showed why this helped: the dominant CUDA API costs were call count, not payload size, with `cudaMemcpy`, `cudaDeviceSynchronize`, and `cudaLaunchKernel` accounting for almost all traced host runtime. Cutting one hot-path memcpy in the opt-in Widom reduction path therefore translated into a large throughput gain.
 
 So the current recommendation is:
 
 * keep explicit sync points where the host immediately consumes move results
 * use `UseGPUReduction yes` for throughput-oriented Widom / charged workloads
 * benchmark `UseFastHostRNG yes` on throughput-focused runs where same-seed identity is not required
+* prefer the current `UseGPUReduction yes` path on Widom-heavy runs, since it now avoids one of the hottest per-move host copies
 * benchmark with your real workload before making it the default in production inputs
 
 ## Known limits

@@ -81,14 +81,14 @@ inline void Host_sum_Widom_HGGG_SEPARATE(Components& SystemComponents, size_t Nu
   }
 }
 
-inline void Host_sum_Widom_Trial_Energies(Components& SystemComponents, size_t NumberWidomTrials, const double* energy_array, bool* flag, bool VDWRealBiasing)
+inline void Host_sum_Widom_Trial_Energies(Components& SystemComponents, size_t NumberWidomTrials, const double* energy_array, bool VDWRealBiasing)
 {
   std::vector<size_t>& Trialindex        = SystemComponents.Trialindex;
   std::vector<double>& Rosen             = SystemComponents.Rosen;
   std::vector<MoveEnergy>& TrialEnergies = SystemComponents.TrialEnergies;
   for(size_t i = 0; i < NumberWidomTrials; i++)
   {
-    if(!flag[i])
+    if(energy_array[i * 5 + 4] == 0.0)
       Trialindex.emplace_back(i);
   }
 
@@ -96,7 +96,7 @@ inline void Host_sum_Widom_Trial_Energies(Components& SystemComponents, size_t N
   for(size_t i = 0; i < Trialsize; i++)
   {
     size_t trial = Trialindex[i];
-    size_t location = trial * 4;
+    size_t location = trial * 5;
 
     MoveEnergy E;
     E.HGVDW = energy_array[location];
@@ -112,10 +112,21 @@ inline void Host_sum_Widom_Trial_Energies(Components& SystemComponents, size_t N
   }
 }
 
-static __global__ void Reduce_Widom_Blocksum_PerTrial(const double* blocksum, double* reduced, size_t NumberWidomTrials, size_t HG_Nblock, size_t HGGG_Nblock)
+static __global__ void Reduce_Widom_Blocksum_PerTrial(const double* blocksum, const bool* flag, double* reduced, size_t NumberWidomTrials, size_t HG_Nblock, size_t HGGG_Nblock)
 {
   const size_t trial = blockIdx.x * blockDim.x + threadIdx.x;
   if(trial >= NumberWidomTrials) return;
+
+  const size_t out = trial * 5;
+  if(flag[trial])
+  {
+    reduced[out] = 0.0;
+    reduced[out + 1] = 0.0;
+    reduced[out + 2] = 0.0;
+    reduced[out + 3] = 0.0;
+    reduced[out + 4] = 1.0;
+    return;
+  }
 
   const size_t location = trial * HGGG_Nblock * 2;
   double HG_vdw = 0.0;
@@ -128,11 +139,11 @@ static __global__ void Reduce_Widom_Blocksum_PerTrial(const double* blocksum, do
   for(size_t ijk = HGGG_Nblock; ijk < HG_Nblock + HGGG_Nblock; ijk++) HG_real += blocksum[location + ijk];
   for(size_t ijk = HG_Nblock + HGGG_Nblock; ijk < HGGG_Nblock + HGGG_Nblock; ijk++) GG_real += blocksum[location + ijk];
 
-  const size_t out = trial * 4;
   reduced[out] = HG_vdw;
   reduced[out + 1] = GG_vdw;
   reduced[out + 2] = HG_real;
   reduced[out + 3] = GG_real;
+  reduced[out + 4] = 0.0;
 }
 
 inline void CBMC_PairwiseInteractions(Variables& Vars, size_t systemId, Components& SystemComponents, Simulations& Sims, size_t NTrials, size_t chainsize)
@@ -161,9 +172,9 @@ inline void CBMC_PairwiseInteractions(Variables& Vars, size_t systemId, Componen
     if(Widom.UseGPUReduction)
     {
       size_t reduce_Nthread = 0; size_t reduce_Nblock = 0; Setup_threadblock(NTrials, reduce_Nblock, reduce_Nthread);
-      Reduce_Widom_Blocksum_PerTrial<<<reduce_Nblock, reduce_Nthread>>>(Sims.Blocksum, Sims.Blocksum + Widom.TrialEnergyOffset, NTrials, HG_Nblock, HGGG_Nblock); checkCUDAError("Error reducing Widom trial energies");
+      Reduce_Widom_Blocksum_PerTrial<<<reduce_Nblock, reduce_Nthread>>>(Sims.Blocksum, Sims.device_flag, Sims.Blocksum + Widom.TrialEnergyOffset, NTrials, HG_Nblock, HGGG_Nblock); checkCUDAError("Error reducing Widom trial energies");
       cudaDeviceSynchronize();
-      CopyBlocksumSliceToHost(SystemComponents, Sims, Widom.TrialEnergyOffset, 4 * NTrials);
+      CopyBlocksumSliceToHost(SystemComponents, Sims, Widom.TrialEnergyOffset, 5 * NTrials);
     }
     else
     {
@@ -172,14 +183,15 @@ inline void CBMC_PairwiseInteractions(Variables& Vars, size_t systemId, Componen
   } 
   else if(Widom.UseGPUReduction)
   {
-    std::fill_n(SystemComponents.host_array, 4 * NTrials, 0.0);
+    std::fill_n(SystemComponents.host_array, 5 * NTrials, 0.0);
   }
-  CopyDeviceFlagsToHost(SystemComponents, Sims, NTrials);
+  if(!Widom.UseGPUReduction)
+    CopyDeviceFlagsToHost(SystemComponents, Sims, NTrials);
   //printf("OldNBlock: %zu, HG_Nblock: %zu, GG_Nblock: %zu, HGGG_Nblock: %zu\n", Nblock, HG_Nblock, GG_Nblock, HGGG_Nblock); 
   
   //printf("FIRST BEAD ENERGIES\n");
   if(Widom.UseGPUReduction)
-    Host_sum_Widom_Trial_Energies(SystemComponents, NTrials, SystemComponents.host_array, SystemComponents.flag, Vars.device_FF.VDWRealBias);
+    Host_sum_Widom_Trial_Energies(SystemComponents, NTrials, SystemComponents.host_array, Vars.device_FF.VDWRealBias);
   else
     Host_sum_Widom_HGGG_SEPARATE(SystemComponents, NTrials, SystemComponents.host_array, SystemComponents.flag, HG_Nblock, HGGG_Nblock, Vars.device_FF.VDWRealBias);
 }
