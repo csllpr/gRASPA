@@ -154,26 +154,7 @@ inline MoveEnergy SingleBody_Calculation(Variables& Vars, size_t systemId)
   MoveEnergy tot; 
   if(!SystemComponents.flag[0] || !CheckOverlap)
   {
-    CopyBlocksumToHost(SystemComponents, Sims, 2 * Total_Nblock);
-    //VDW Part and Real Part Coulomb//
-    for(size_t i = 0; i < HH_Nblock; i++) 
-    {
-      tot.HHVDW += SystemComponents.host_array[i];
-      tot.HHReal+= SystemComponents.host_array[i + Total_Nblock];
-      //if(MoveType == SPECIAL_ROTATION) printf("HH Block %zu, VDW: %.5f, Real: %.5f\n", i, BlockResult[i], BlockResult[i + Total_Nblock]);
-    }
-    for(size_t i = HH_Nblock; i < HH_Nblock + HG_Nblock; i++) 
-    {
-      tot.HGVDW += SystemComponents.host_array[i];
-      tot.HGReal+= SystemComponents.host_array[i + Total_Nblock];
-      //printf("HG Block %zu, VDW: %.5f, Real: %.5f\n", i, BlockResult[i], BlockResult[i + Total_Nblock]);
-    }
-    for(size_t i = HH_Nblock + HG_Nblock; i < Total_Nblock; i++)
-    {
-      tot.GGVDW += SystemComponents.host_array[i];
-      tot.GGReal+= SystemComponents.host_array[i + Total_Nblock];
-      //printf("GG Block %zu, VDW: %.5f, Real: %.5f\n", i, BlockResult[i], BlockResult[i + Total_Nblock]);
-    }
+    Load_MoveEnergyFromBlocksum(SystemComponents, Sims, HH_Nblock, HG_Nblock, GG_Nblock, tot);
 
     /*
     printf("HG_NBlock: %zu\n", Total_Nblock);

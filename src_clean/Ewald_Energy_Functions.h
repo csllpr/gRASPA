@@ -412,10 +412,10 @@ inline void Load_Ewald_Blocksum_Pair(Components& SystemComponents, Simulations& 
 {
   if(Sim.UseGPUReduction)
   {
-    Reduce_Ewald_Blocksum_ToPair<<<1, 1>>>(Sim.Blocksum, Sim.Blocksum + Sim.EwaldReductionOffset, Nblock);
+    Reduce_Ewald_Blocksum_ToPair<<<1, 1>>>(Sim.Blocksum, Sim.Blocksum + Sim.ReductionScratchOffset, Nblock);
     checkCUDAErrorEwald("Error reducing Ewald block sums");
     cudaDeviceSynchronize();
-    CopyBlocksumSliceToHost(SystemComponents, Sim, Sim.EwaldReductionOffset, 2);
+    CopyBlocksumSliceToHost(SystemComponents, Sim, Sim.ReductionScratchOffset, 2);
     SameSum = SystemComponents.host_array[0];
     CrossSum = SystemComponents.host_array[1];
     return;

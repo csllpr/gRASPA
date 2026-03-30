@@ -17,6 +17,7 @@ now enables two GPU-side final-reduction paths:
    `GPU_EwaldDifference_General`
    `GPU_EwaldDifference_IdentitySwap`
    `GPU_EwaldDifference_LambdaChange`
+3. GPU-side final reduction for single-body / lambda-change VDW+real move energies
 
 The default is still:
 
@@ -33,7 +34,8 @@ The recent runtime work in `src_clean/` did four things:
 1. Moved blocked-pocket hot-path checks onto the GPU and replaced the old host scan with a small device summary.
 2. Added device-side Widom trial-energy reduction so the host no longer needs the full per-block partial array for each Widom trial.
 3. Added device-side Ewald delta reduction so the host copies back only the final same-type / cross-type pair when GPU reduction is enabled.
-4. Reserved explicit tail scratch inside `Sim.Blocksum` and preserved that tail during `Blocksum` growth.
+4. Added device-side final reduction for the single-body / CBCF lambda VDW+real move-energy path.
+5. Reserved explicit tail scratch inside `Sim.Blocksum` and preserved that tail during `Blocksum` growth.
 
 ## Intended usage
 
@@ -60,6 +62,7 @@ On the local GPU 1 benchmark setup used during this refactor work:
 
 * the Widom GPU-reduction path gave the larger gain
 * the added Ewald move-delta reduction was smaller but still positive
+* the added single-body / lambda move-energy reduction was positive on a charged, move-heavy Bae benchmark
 * removing explicit host/device rendezvous points in the hot path was not a win under many-process MPS load and was reverted
 
 So the current recommendation is:

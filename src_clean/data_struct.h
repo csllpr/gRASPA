@@ -1322,7 +1322,7 @@ struct Simulations //For multiple simulations//
   size_t  start_position;       // Start position for reading data in d_a when proposing a trial position for moves //
   size_t  Nblocks;              // Number of blocks for energy calculation, NOT block averages! //
   size_t  BlocksumTailSize = 0; // Reserved scratch appended to Blocksum for optional reductions //
-  size_t  EwaldReductionOffset = 0; // Offset to the 2-double Ewald reduced result scratch //
+  size_t  ReductionScratchOffset = 0; // Offset to the shared reduced-result scratch //
   bool    UseGPUReduction = false; // Opt-in runtime switch for GPU-side final reductions //
   Boxsize Box;                  // Each simulation (system) has its own box //
 };
@@ -1353,6 +1353,80 @@ inline void CopyBlocksumSliceToHost(Components& SystemComponents, const Simulati
 {
   if(count == 0) return;
   cudaMemcpy(SystemComponents.host_array, Sims.Blocksum + offset, count * sizeof(double), cudaMemcpyDeviceToHost);
+}
+
+static __global__ void Reduce_Move_Blocksum_ToTotals(const double* blocksum, double* reduced, size_t HH_Nblock, size_t HG_Nblock, size_t GG_Nblock)
+{
+  if(blockIdx.x != 0 || threadIdx.x != 0) return;
+
+  const size_t Total_Nblock = HH_Nblock + HG_Nblock + GG_Nblock;
+
+  double HHVDW = 0.0;
+  double HGVDW = 0.0;
+  double GGVDW = 0.0;
+  double HHReal = 0.0;
+  double HGReal = 0.0;
+  double GGReal = 0.0;
+
+  for(size_t i = 0; i < HH_Nblock; i++)
+  {
+    HHVDW += blocksum[i];
+    HHReal += blocksum[i + Total_Nblock];
+  }
+  for(size_t i = HH_Nblock; i < HH_Nblock + HG_Nblock; i++)
+  {
+    HGVDW += blocksum[i];
+    HGReal += blocksum[i + Total_Nblock];
+  }
+  for(size_t i = HH_Nblock + HG_Nblock; i < Total_Nblock; i++)
+  {
+    GGVDW += blocksum[i];
+    GGReal += blocksum[i + Total_Nblock];
+  }
+
+  reduced[0] = HHVDW;
+  reduced[1] = HGVDW;
+  reduced[2] = GGVDW;
+  reduced[3] = HHReal;
+  reduced[4] = HGReal;
+  reduced[5] = GGReal;
+}
+
+inline void Load_MoveEnergyFromBlocksum(Components& SystemComponents, Simulations& Sims, size_t HH_Nblock, size_t HG_Nblock, size_t GG_Nblock, MoveEnergy& tot)
+{
+  const size_t Total_Nblock = HH_Nblock + HG_Nblock + GG_Nblock;
+  if(Total_Nblock == 0) return;
+
+  if(Sims.UseGPUReduction)
+  {
+    Reduce_Move_Blocksum_ToTotals<<<1, 1>>>(Sims.Blocksum, Sims.Blocksum + Sims.ReductionScratchOffset, HH_Nblock, HG_Nblock, GG_Nblock);
+    cudaDeviceSynchronize();
+    CopyBlocksumSliceToHost(SystemComponents, Sims, Sims.ReductionScratchOffset, 6);
+    tot.HHVDW = SystemComponents.host_array[0];
+    tot.HGVDW = SystemComponents.host_array[1];
+    tot.GGVDW = SystemComponents.host_array[2];
+    tot.HHReal = SystemComponents.host_array[3];
+    tot.HGReal = SystemComponents.host_array[4];
+    tot.GGReal = SystemComponents.host_array[5];
+    return;
+  }
+
+  CopyBlocksumToHost(SystemComponents, Sims, 2 * Total_Nblock);
+  for(size_t i = 0; i < HH_Nblock; i++)
+  {
+    tot.HHVDW += SystemComponents.host_array[i];
+    tot.HHReal += SystemComponents.host_array[i + Total_Nblock];
+  }
+  for(size_t i = HH_Nblock; i < HH_Nblock + HG_Nblock; i++)
+  {
+    tot.HGVDW += SystemComponents.host_array[i];
+    tot.HGReal += SystemComponents.host_array[i + Total_Nblock];
+  }
+  for(size_t i = HH_Nblock + HG_Nblock; i < Total_Nblock; i++)
+  {
+    tot.GGVDW += SystemComponents.host_array[i];
+    tot.GGReal += SystemComponents.host_array[i + Total_Nblock];
+  }
 }
 
 inline void CopyDeviceFlagsToHost(Components& SystemComponents, const Simulations& Sims, size_t count)

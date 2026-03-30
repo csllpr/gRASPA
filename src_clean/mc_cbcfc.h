@@ -73,28 +73,7 @@ static inline MoveEnergy CBCF_LambdaChange(Variables& Vars, size_t systemId, siz
   if(!SystemComponents.flag[0])
   {
     SuccessConstruction = true;
-    double BlockResult[Total_Nblock + Total_Nblock];
-    cudaMemcpy(BlockResult, Sims.Blocksum, 2 * Total_Nblock * sizeof(double), cudaMemcpyDeviceToHost);
-
-    //VDW Part and Real Part Coulomb//
-    for(size_t i = 0; i < HH_Nblock; i++)
-    {
-      tot.HHVDW += BlockResult[i];
-      tot.HHReal+= BlockResult[i + Total_Nblock];
-      //if(MoveType == SPECIAL_ROTATION) printf("HH Block %zu, VDW: %.5f, Real: %.5f\n", i, BlockResult[i], BlockResult[i + Total_Nblock]);
-    }
-    for(size_t i = HH_Nblock; i < HH_Nblock + HG_Nblock; i++)
-    {
-      tot.HGVDW += BlockResult[i];
-      tot.HGReal+= BlockResult[i + Total_Nblock];
-      //if(SystemComponents.CURRENTCYCLE == 25) printf("HG Block %zu, VDW: %.5f, Real: %.5f\n", i, BlockResult[i], BlockResult[i + Total_Nblock]);
-    }
-    for(size_t i = HH_Nblock + HG_Nblock; i < Total_Nblock; i++)
-    {
-      tot.GGVDW += BlockResult[i];
-      tot.GGReal+= BlockResult[i + Total_Nblock];
-      //printf("GG Block %zu, VDW: %.5f, Real: %.5f\n", i, BlockResult[i], BlockResult[i + Total_Nblock]);
-    }
+    Load_MoveEnergyFromBlocksum(SystemComponents, Sims, HH_Nblock, HG_Nblock, GG_Nblock, tot);
 
     if(!FF.noCharges && SystemComponents.hasPartialCharge[SelectedComponent])
     {
