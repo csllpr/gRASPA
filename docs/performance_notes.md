@@ -55,6 +55,7 @@ The recent runtime work in `src_clean/` did four things:
 8. Reduced small but repeated Widom-side CPU overhead by reusing the existing shifted-Boltzmann scratch vector, shrinking the first-bead trial-position kernel arguments, and removing the stale random-setup debug launch.
 9. Added an opt-in faster host-side uniform RNG backend for CPU-side move selection and host random-buffer generation.
 10. Packed the Widom overlap validity bit into the GPU-reduced per-trial payload so the `UseGPUReduction yes` path no longer needs a separate host copy of the trial flags.
+11. Changed the opt-in Ewald move-delta path so the Fourier kernel can accumulate same-type and cross-type totals directly into the reduced scratch, removing the extra GPU reduction launch from `UseGPUReduction yes`.
 
 ## Intended usage
 
@@ -94,6 +95,7 @@ On the local GPU 1 benchmark setup used during this refactor work:
 * the added single-body / lambda move-energy reduction was positive on a charged, move-heavy Bae benchmark
 * `UseFastHostRNG yes` improved the standard 16-way Widom benchmark by about `1.0249x`
 * packing the Widom validity bit into the reduced trial payload improved the 16-way `UseGPUReduction yes` + `UseFastHostRNG yes` benchmark by about `1.2052x` versus the immediately previous build
+* direct Ewald pair accumulation in the opt-in path improved the same 16-way `UseGPUReduction yes` + `UseFastHostRNG yes` benchmark by about `1.0665x` versus the previous implementation
 * removing explicit host/device rendezvous points in the hot path was not a win under many-process MPS load and was reverted
 * converting `Vars.Sims` to a host wrapper was throughput-neutral to slightly positive on the standard 16-way Widom benchmark while also removing the last `cudaMallocManaged(...)` dependency in `src_clean/`
 * the Widom-side CPU-overhead cleanup produced a further small gain on the same 16-way benchmark

@@ -277,7 +277,7 @@ __global__ void JustStore_StructureFactor_Ewald(Boxsize Box, size_t nvec)
 // CALCULATE FOURIER PART OF THE COULOMBIC ENERGY FOR A MOVE //
 ///////////////////////////////////////////////////////////////
 
-__global__ void Fourier_Ewald_Diff(Boxsize Box, Complex* SameTypeEik, Complex* CrossTypeEik, Atoms Old, double alpha_squared, double prefactor, int3 kmax, size_t Oldsize, size_t Newsize, double* Blocksum, bool UseTempVector, size_t Nblock)
+__global__ void Fourier_Ewald_Diff(Boxsize Box, Complex* SameTypeEik, Complex* CrossTypeEik, Atoms Old, double alpha_squared, double prefactor, int3 kmax, size_t Oldsize, size_t Newsize, double* Blocksum, double* ReducedPair, bool UseTempVector, size_t Nblock)
 {
   //Zhao's note: provide an additional Nblock to distinguish Host-Guest and Guest-Guest Ewald//
   //Guest-Guest is the first half, Host-Guest is the second//
@@ -393,7 +393,13 @@ __global__ void Fourier_Ewald_Diff(Boxsize Box, Complex* SameTypeEik, Complex* C
     __syncthreads();
     i /= 2;
   }
-  if(cache_id == 0) {Blocksum[blockIdx.x] = sdata[0];}
+  if(cache_id == 0)
+  {
+    if(ReducedPair)
+      atomicAdd(&ReducedPair[blockIdx.x < Nblock ? 0 : 1], sdata[0]);
+    else
+      Blocksum[blockIdx.x] = sdata[0];
+  }
 }
 
 static __global__ void Reduce_Ewald_Blocksum_ToPair(const double* blocksum, double* reduced, size_t Nblock)
@@ -412,8 +418,6 @@ inline void Load_Ewald_Blocksum_Pair(Components& SystemComponents, Simulations& 
 {
   if(Sim.UseGPUReduction)
   {
-    Reduce_Ewald_Blocksum_ToPair<<<1, 1>>>(Sim.Blocksum, Sim.Blocksum + Sim.ReductionScratchOffset, Nblock);
-    checkCUDAErrorEwald("Error reducing Ewald block sums");
     cudaDeviceSynchronize();
     CopyBlocksumSliceToHost(SystemComponents, Sim, Sim.ReductionScratchOffset, 2);
     SameSum = SystemComponents.host_array[0];
@@ -564,7 +568,13 @@ double2 GPU_EwaldDifference_General(Simulations& Sim, ForceField& FF, Components
   Nblock = 0; Nthread = 0; Setup_threadblock(numberOfStructureFactors, Nblock, Nthread);
 
   //If we separate Host-Guest from Guest-Guest, we can double the Nblock, so the first half does Guest-Guest, and the second half does Host-Guest//
-  Fourier_Ewald_Diff<<<Nblock * 2, Nthread, Nthread * sizeof(double)>>>(Box, SameType, CrossType, Old, alpha_squared, prefactor, Box.kmax, Oldsize, Newsize, Blocksum, UseTempVector, Nblock);
+  double* ReducedPair = nullptr;
+  if(Sim.UseGPUReduction)
+  {
+    ReducedPair = Blocksum + Sim.ReductionScratchOffset;
+    cudaMemset(ReducedPair, 0, 2 * sizeof(double));
+  }
+  Fourier_Ewald_Diff<<<Nblock * 2, Nthread, Nthread * sizeof(double)>>>(Box, SameType, CrossType, Old, alpha_squared, prefactor, Box.kmax, Oldsize, Newsize, Blocksum, ReducedPair, UseTempVector, Nblock);
   
   double SameSum = 0.0; double CrossSum = 0.0;
 
@@ -642,7 +652,13 @@ double2 GPU_EwaldDifference_IdentitySwap(Simulations& Sim, ForceField& FF, Compo
   //Fourier Loop//
   size_t numberOfStructureFactors = (Box.kmax.x + 1) * (2 * Box.kmax.y + 1) * (2 * Box.kmax.z + 1);
   Nblock = 0; Nthread = 0; Setup_threadblock(numberOfStructureFactors, Nblock, Nthread);
-  Fourier_Ewald_Diff<<<Nblock * 2, Nthread, Nthread * sizeof(double)>>>(Box, SameType, CrossType, Old, alpha_squared, prefactor, Box.kmax, Oldsize, Newsize, Blocksum, false, Nblock);
+  double* ReducedPair = nullptr;
+  if(Sim.UseGPUReduction)
+  {
+    ReducedPair = Blocksum + Sim.ReductionScratchOffset;
+    cudaMemset(ReducedPair, 0, 2 * sizeof(double));
+  }
+  Fourier_Ewald_Diff<<<Nblock * 2, Nthread, Nthread * sizeof(double)>>>(Box, SameType, CrossType, Old, alpha_squared, prefactor, Box.kmax, Oldsize, Newsize, Blocksum, ReducedPair, false, Nblock);
   double SameSum = 0.0;  double CrossSum = 0.0;
   Load_Ewald_Blocksum_Pair(SystemComponents, Sim, Nblock, SameSum, CrossSum);
 
@@ -665,7 +681,7 @@ double2 GPU_EwaldDifference_IdentitySwap(Simulations& Sim, ForceField& FF, Compo
 ///////////////////////////////////////////////////////////////////////////
 // Zhao's note: Special function for the Ewald for Lambda change of CBCF //
 ///////////////////////////////////////////////////////////////////////////
-__global__ void Fourier_Ewald_Diff_LambdaChange(Boxsize Box, Complex* SameTypeEik, Complex* CrossTypeEik, Atoms Old, double alpha_squared, double prefactor, int3 kmax, size_t Oldsize, size_t Newsize, double* Blocksum, bool UseTempVector, size_t Nblock, double newScale)
+__global__ void Fourier_Ewald_Diff_LambdaChange(Boxsize Box, Complex* SameTypeEik, Complex* CrossTypeEik, Atoms Old, double alpha_squared, double prefactor, int3 kmax, size_t Oldsize, size_t Newsize, double* Blocksum, double* ReducedPair, bool UseTempVector, size_t Nblock, double newScale)
 {
   extern __shared__ double sdata[]; //shared memory for partial sum//
   size_t kxyz           = blockIdx.x * blockDim.x + threadIdx.x;
@@ -773,7 +789,13 @@ __global__ void Fourier_Ewald_Diff_LambdaChange(Boxsize Box, Complex* SameTypeEi
     __syncthreads();
     i /= 2;
   }
-  if(cache_id == 0) {Blocksum[blockIdx.x] = sdata[0];}
+  if(cache_id == 0)
+  {
+    if(ReducedPair)
+      atomicAdd(&ReducedPair[blockIdx.x < Nblock ? 0 : 1], sdata[0]);
+    else
+      Blocksum[blockIdx.x] = sdata[0];
+  }
 }
 
 //Zhao's note: THIS IS A SPECIAL FUNCTION JUST FOR LAMBDA MOVE FOR FRACTIONAL MOLECULES//
@@ -807,7 +829,13 @@ double2 GPU_EwaldDifference_LambdaChange(Simulations& Sim, ForceField& FF, Compo
   Complex* SameType = Box.AdsorbateEik;
   Complex* CrossType= Box.FrameworkEik;
 
-  Fourier_Ewald_Diff_LambdaChange<<<Nblock * 2, Nthread, Nthread * sizeof(double)>>>(Box, SameType, CrossType, Old, alpha_squared, prefactor, Box.kmax, Oldsize, Newsize, Blocksum, UseTempVector, Nblock, newScale.y);
+  double* ReducedPair = nullptr;
+  if(Sim.UseGPUReduction)
+  {
+    ReducedPair = Blocksum + Sim.ReductionScratchOffset;
+    cudaMemset(ReducedPair, 0, 2 * sizeof(double));
+  }
+  Fourier_Ewald_Diff_LambdaChange<<<Nblock * 2, Nthread, Nthread * sizeof(double)>>>(Box, SameType, CrossType, Old, alpha_squared, prefactor, Box.kmax, Oldsize, Newsize, Blocksum, ReducedPair, UseTempVector, Nblock, newScale.y);
  
   double SameSum = 0.0; double CrossSum = 0.0;
   Load_Ewald_Blocksum_Pair(SystemComponents, Sim, Nblock, SameSum, CrossSum);
