@@ -396,6 +396,37 @@ __global__ void Fourier_Ewald_Diff(Boxsize Box, Complex* SameTypeEik, Complex* C
   if(cache_id == 0) {Blocksum[blockIdx.x] = sdata[0];}
 }
 
+static __global__ void Reduce_Ewald_Blocksum_ToPair(const double* blocksum, double* reduced, size_t Nblock)
+{
+  if(blockIdx.x != 0 || threadIdx.x != 0) return;
+
+  double SameSum = 0.0;
+  double CrossSum = 0.0;
+  for(size_t i = 0; i < Nblock; i++) SameSum += blocksum[i];
+  for(size_t i = Nblock; i < 2 * Nblock; i++) CrossSum += blocksum[i];
+  reduced[0] = SameSum;
+  reduced[1] = CrossSum;
+}
+
+inline void Load_Ewald_Blocksum_Pair(Components& SystemComponents, Simulations& Sim, size_t Nblock, double& SameSum, double& CrossSum)
+{
+  if(Sim.UseGPUReduction)
+  {
+    Reduce_Ewald_Blocksum_ToPair<<<1, 1>>>(Sim.Blocksum, Sim.Blocksum + Sim.EwaldReductionOffset, Nblock);
+    checkCUDAErrorEwald("Error reducing Ewald block sums");
+    cudaDeviceSynchronize();
+    CopyBlocksumSliceToHost(SystemComponents, Sim, Sim.EwaldReductionOffset, 2);
+    SameSum = SystemComponents.host_array[0];
+    CrossSum = SystemComponents.host_array[1];
+    return;
+  }
+
+  cudaDeviceSynchronize();
+  CopyBlocksumToHost(SystemComponents, Sim, 2 * Nblock);
+  for(size_t i = 0; i < Nblock; i++) SameSum += SystemComponents.host_array[i];
+  for(size_t i = Nblock; i < 2 * Nblock; i++) CrossSum += SystemComponents.host_array[i];
+}
+
 void Skip_Ewald(Boxsize& Box)
 {
   size_t numberOfStructureFactors = (Box.kmax.x + 1) * (2 * Box.kmax.y + 1) * (2 * Box.kmax.z + 1);
@@ -537,10 +568,7 @@ double2 GPU_EwaldDifference_General(Simulations& Sim, ForceField& FF, Components
   
   double SameSum = 0.0; double CrossSum = 0.0;
 
-  cudaDeviceSynchronize();
-  CopyBlocksumToHost(SystemComponents, Sim, 2 * Nblock);
-  for(size_t i = 0; i < Nblock; i++){SameSum += SystemComponents.host_array[i];}
-  for(size_t i = Nblock; i < 2 * Nblock; i++){CrossSum += SystemComponents.host_array[i];}
+  Load_Ewald_Blocksum_Pair(SystemComponents, Sim, Nblock, SameSum, CrossSum);
   //Zhao's note: when adding fractional molecules, this might not be correct//
   double deltaExclusion = 0.0;
   
@@ -579,11 +607,16 @@ double2 GPU_EwaldDifference_General(Simulations& Sim, ForceField& FF, Components
   return {SameSum, 2.0 * CrossSum};
 }
 
-double2 GPU_EwaldDifference_IdentitySwap(Boxsize& Box, Atoms*& d_a, Atoms& Old, double3* temp, ForceField& FF, double* Blocksum, Components& SystemComponents, size_t OLDComponent, size_t NEWComponent, size_t UpdateLocation)
+double2 GPU_EwaldDifference_IdentitySwap(Simulations& Sim, ForceField& FF, Components& SystemComponents, size_t OLDComponent, size_t NEWComponent, size_t UpdateLocation)
 {
   if(FF.noCharges && !SystemComponents.hasPartialCharge[NEWComponent] && !SystemComponents.hasPartialCharge[OLDComponent]) return {0.0, 0.0};
   if(OLDComponent < SystemComponents.NComponents.y || NEWComponent < SystemComponents.NComponents.y)
     throw std::runtime_error("Identity swap Ewald is only implemented for adsorbate components");
+  Boxsize& Box = Sim.Box;
+  Atoms*& d_a = Sim.d_a;
+  Atoms& Old = Sim.Old;
+  double3* temp = SystemComponents.tempMolStorage;
+  double* Blocksum = Sim.Blocksum;
   double alpha = Box.Alpha; double alpha_squared = alpha * alpha;
   double prefactor = Box.Prefactor * (2.0 * M_PI / Box.Volume);
 
@@ -611,11 +644,7 @@ double2 GPU_EwaldDifference_IdentitySwap(Boxsize& Box, Atoms*& d_a, Atoms& Old, 
   Nblock = 0; Nthread = 0; Setup_threadblock(numberOfStructureFactors, Nblock, Nthread);
   Fourier_Ewald_Diff<<<Nblock * 2, Nthread, Nthread * sizeof(double)>>>(Box, SameType, CrossType, Old, alpha_squared, prefactor, Box.kmax, Oldsize, Newsize, Blocksum, false, Nblock);
   double SameSum = 0.0;  double CrossSum = 0.0;
-  //cudaMemcpy(sum, Blocksum, 2 * Nblock * sizeof(double), cudaMemcpyDeviceToHost);
-  cudaDeviceSynchronize();
-  cudaMemcpy(SystemComponents.host_array, Blocksum, 2 * Nblock * sizeof(double), cudaMemcpyDeviceToHost);
-  for(size_t i = 0; i < Nblock; i++){SameSum += SystemComponents.host_array[i];}
-  for(size_t i = Nblock; i < 2 * Nblock; i++){CrossSum += SystemComponents.host_array[i];}
+  Load_Ewald_Blocksum_Pair(SystemComponents, Sim, Nblock, SameSum, CrossSum);
 
   //Exclusion parts//
   if(SystemComponents.rigid[NEWComponent] && SystemComponents.hasPartialCharge[NEWComponent])
@@ -748,9 +777,13 @@ __global__ void Fourier_Ewald_Diff_LambdaChange(Boxsize Box, Complex* SameTypeEi
 }
 
 //Zhao's note: THIS IS A SPECIAL FUNCTION JUST FOR LAMBDA MOVE FOR FRACTIONAL MOLECULES//
-double2 GPU_EwaldDifference_LambdaChange(Boxsize& Box, Atoms*& d_a, Atoms& Old, ForceField& FF, double* Blocksum, Components& SystemComponents, size_t SelectedComponent, double2 oldScale, double2 newScale, int MoveType)
+double2 GPU_EwaldDifference_LambdaChange(Simulations& Sim, ForceField& FF, Components& SystemComponents, size_t SelectedComponent, double2 oldScale, double2 newScale, int MoveType)
 {
   if(FF.noCharges && !SystemComponents.hasPartialCharge[SelectedComponent]) return {0.0, 0.0};
+  Boxsize& Box = Sim.Box;
+  Atoms*& d_a = Sim.d_a;
+  Atoms& Old = Sim.Old;
+  double* Blocksum = Sim.Blocksum;
   double alpha = Box.Alpha; double alpha_squared = alpha * alpha;
   double prefactor = Box.Prefactor * (2.0 * M_PI / Box.Volume);
 
@@ -777,11 +810,7 @@ double2 GPU_EwaldDifference_LambdaChange(Boxsize& Box, Atoms*& d_a, Atoms& Old, 
   Fourier_Ewald_Diff_LambdaChange<<<Nblock * 2, Nthread, Nthread * sizeof(double)>>>(Box, SameType, CrossType, Old, alpha_squared, prefactor, Box.kmax, Oldsize, Newsize, Blocksum, UseTempVector, Nblock, newScale.y);
  
   double SameSum = 0.0; double CrossSum = 0.0;
-  //cudaMemcpy(Host_sum, Blocksum, 2 * Nblock * sizeof(double), cudaMemcpyDeviceToHost);
-  cudaDeviceSynchronize();
-  cudaMemcpy(SystemComponents.host_array, Blocksum, 2 * Nblock * sizeof(double), cudaMemcpyDeviceToHost);
-  for(size_t i = 0; i < Nblock; i++){SameSum += SystemComponents.host_array[i];}
-  for(size_t i = Nblock; i < 2 * Nblock; i++){CrossSum += SystemComponents.host_array[i];}
+  Load_Ewald_Blocksum_Pair(SystemComponents, Sim, Nblock, SameSum, CrossSum);
   //printf("Fourier GPU lambda Change: %.5f\n", tot);
   double delta_scale = std::pow(newScale.y,2) - std::pow(oldScale.y,2);
   double deltaExclusion = (SystemComponents.ExclusionIntra[SelectedComponent] + SystemComponents.ExclusionAtom[SelectedComponent]) * delta_scale;

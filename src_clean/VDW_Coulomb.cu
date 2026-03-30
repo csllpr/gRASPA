@@ -1629,8 +1629,8 @@ MoveEnergy Total_VDW_Coulomb_Energy(Simulations& Sim, Components& SystemComponen
   {
     printf("More blocks for block sum is needed\n");
     cudaFree(Sim.Blocksum);
-    cudaMalloc(&Sim.Blocksum, 2*Nblock * sizeof(double));
-    Sim.Nblocks = 2 * Nblock;
+    Sim.Nblocks = 2 * Nblock + Sim.BlocksumTailSize;
+    cudaMalloc(&Sim.Blocksum, Sim.Nblocks * sizeof(double));
   }
 
   int3 BLOCKS = {

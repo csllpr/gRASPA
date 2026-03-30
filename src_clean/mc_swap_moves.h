@@ -342,7 +342,7 @@ static inline MoveEnergy IdentitySwapMove(Variables& Vars, size_t systemId)
   size_t UpdateLocation = SystemComponents.Moleculesize[OLDComponent] * OLDMolInComponent;
   if(!FF.noCharges)
   {
-    double2 EwaldE = GPU_EwaldDifference_IdentitySwap(Sims.Box, Sims.d_a, Sims.Old, SystemComponents.tempMolStorage, FF, Sims.Blocksum, SystemComponents, OLDComponent, NEWComponent, UpdateLocation);
+    double2 EwaldE = GPU_EwaldDifference_IdentitySwap(Sims, FF, SystemComponents, OLDComponent, NEWComponent, UpdateLocation);
     energy.GGEwaldE = EwaldE.x;
     energy.HGEwaldE = EwaldE.y;
     Rosenbluth *= std::exp(-SystemComponents.Beta * (EwaldE.x + EwaldE.y));

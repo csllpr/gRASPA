@@ -195,11 +195,20 @@ inline void Prepare_Widom(WidomStruct& Widom, Boxsize Box, Simulations& Sims, Co
   for (size_t i = 0; i < MaxTrialsize; ++i) SystemComponents.flag[i] = false;
   cudaMalloc(&Sims.device_flag,              MaxTrialsize * sizeof(bool));
   cudaMemset(Sims.device_flag, 0, MaxTrialsize * sizeof(bool));
+  cudaMalloc(&Sims.device_block_pocket_summary, sizeof(BlockPocketSummary));
+  BlockPocketSummary initial_block_pocket_summary = {BlockPocketSummaryNoHit(), 0};
+  cudaMemcpy(Sims.device_block_pocket_summary, &initial_block_pocket_summary, sizeof(BlockPocketSummary), cudaMemcpyHostToDevice);
  
   size_t vdw_real_size = (MaxResultsize/DEFAULTTHREAD + 1);
   size_t blocksum_size = vdw_real_size;
   size_t fourier_size  = SystemComponents.EikAllocateSize;
   if(fourier_size > vdw_real_size) blocksum_size = fourier_size;
+  Sims.UseGPUReduction = Widom.UseGPUReduction;
+  Widom.TrialEnergyOffset = blocksum_size;
+  blocksum_size += 4 * MaxTrial;
+  Sims.EwaldReductionOffset = blocksum_size;
+  blocksum_size += 2;
+  Sims.BlocksumTailSize = 4 * MaxTrial + 2;
 
   //Allocate temporary space for reinsertion//
   size_t MaxAdsorbateMolsize = *std::max_element(SystemComponents.Moleculesize.begin() + 1, SystemComponents.Moleculesize.end());;

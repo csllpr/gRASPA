@@ -99,7 +99,7 @@ static inline MoveEnergy CBCF_LambdaChange(Variables& Vars, size_t systemId, siz
     if(!FF.noCharges && SystemComponents.hasPartialCharge[SelectedComponent])
     {
       //Zhao's note: since we changed it from using translation/rotation functions to its own, this needs to be changed as well//
-      double2 EwaldE = GPU_EwaldDifference_LambdaChange(Sims.Box, Sims.d_a, Sims.Old, FF, Sims.Blocksum, SystemComponents, SelectedComponent, oldScale, newScale, MoveType);
+      double2 EwaldE = GPU_EwaldDifference_LambdaChange(Sims, FF, SystemComponents, SelectedComponent, oldScale, newScale, MoveType);
       if(HH_Nblock == 0)
       {
         tot.GGEwaldE = EwaldE.x;

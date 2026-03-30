@@ -73,6 +73,14 @@ A detailed installation note for gRASPA on CentOS/Ubuntu 24.04 is documented in 
 ## Quick Start
 * Go to [```Examples/```](Examples/) folder and read more!
 
+## Performance Notes
+* A short note on the current performance-oriented runtime options is available in [docs/performance_notes.md](docs/performance_notes.md).
+* `UseGPUReduction yes` is now an opt-in runtime path for:
+  * GPU-side Widom trial-energy final reduction
+  * GPU-side Ewald move-delta final reduction
+* The default remains `UseGPUReduction no`.
+* For the current local benchmarks, the GPU-reduction path is a modest win on charged / Widom-heavy workloads, but it should still be validated on your target workload.
+
 ## gRASPA Manual
 * gRASPA manual is available online @ https://zhaoli2042.github.io/gRASPA-mkdoc
   * also available in [Chinese](https://zhaoli2042.github.io/gRASPA-mkdoc/Chinese)
@@ -92,4 +100,3 @@ A detailed installation note for gRASPA on CentOS/Ubuntu 24.04 is documented in 
 * Christopher Knight (Argonne National Laboratory, knightc@anl.gov)
 * Alvaro Vazquez Mayagoitia (Argonne National Laboratory, vama@alcf.anl.gov)
 * Randall Q. Snurr (Northwestern University, snurr@northwestern.edu)
-

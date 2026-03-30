@@ -1318,10 +1318,30 @@ struct Simulations //For multiple simulations//
   int2    HostExcludeList[10];  // Host mirror for ExcludeList so hot paths do not rely on managed memory //
   double* Blocksum;             // Block sums for partial reduction //
   bool*   device_flag;          // flags for overlaps on the device //
+  unsigned int* device_block_pocket_summary; // two unsigned ints: first blocked index, blocked count //
   size_t  start_position;       // Start position for reading data in d_a when proposing a trial position for moves //
   size_t  Nblocks;              // Number of blocks for energy calculation, NOT block averages! //
+  size_t  BlocksumTailSize = 0; // Reserved scratch appended to Blocksum for optional reductions //
+  size_t  EwaldReductionOffset = 0; // Offset to the 2-double Ewald reduced result scratch //
+  bool    UseGPUReduction = false; // Opt-in runtime switch for GPU-side final reductions //
   Boxsize Box;                  // Each simulation (system) has its own box //
 };
+
+struct BlockPocketSummary
+{
+  unsigned int firstBlockedIndex;
+  unsigned int blockedCount;
+};
+
+__host__ __device__ inline constexpr unsigned int BlockPocketSummaryNoHit()
+{
+  return std::numeric_limits<unsigned int>::max();
+}
+
+inline bool BlockPocketSummaryHasBlocked(const BlockPocketSummary& summary)
+{
+  return summary.firstBlockedIndex != BlockPocketSummaryNoHit();
+}
 
 inline void CopyBlocksumToHost(Components& SystemComponents, const Simulations& Sims, size_t count)
 {
@@ -1329,10 +1349,23 @@ inline void CopyBlocksumToHost(Components& SystemComponents, const Simulations& 
   cudaMemcpy(SystemComponents.host_array, Sims.Blocksum, count * sizeof(double), cudaMemcpyDeviceToHost);
 }
 
+inline void CopyBlocksumSliceToHost(Components& SystemComponents, const Simulations& Sims, size_t offset, size_t count)
+{
+  if(count == 0) return;
+  cudaMemcpy(SystemComponents.host_array, Sims.Blocksum + offset, count * sizeof(double), cudaMemcpyDeviceToHost);
+}
+
 inline void CopyDeviceFlagsToHost(Components& SystemComponents, const Simulations& Sims, size_t count)
 {
   if(count == 0) return;
   cudaMemcpy(SystemComponents.flag, Sims.device_flag, count * sizeof(bool), cudaMemcpyDeviceToHost);
+}
+
+inline BlockPocketSummary CopyBlockPocketSummaryToHost(const Simulations& Sims)
+{
+  BlockPocketSummary summary = {BlockPocketSummaryNoHit(), 0};
+  cudaMemcpy(&summary, Sims.device_block_pocket_summary, sizeof(BlockPocketSummary), cudaMemcpyDeviceToHost);
+  return summary;
 }
 
 inline void SetExcludeListEntry(Simulations& Sims, size_t index, int2 value)
@@ -1353,11 +1386,12 @@ inline void ResetExcludeList(Simulations& Sims)
 
 struct WidomStruct
 {
-  bool                UseGPUReduction;                  // For calculating the energies for each bead
-  bool                Useflag;                          // For using flags (for skipping reduction)
+  bool                UseGPUReduction = false;          // For calculating the energies for each bead
+  bool                Useflag = false;                  // For using flags (for skipping reduction)
   size_t              NumberWidomTrials = 8;            // Number of Trial Positions for the first bead //
   size_t              NumberWidomTrialsOrientations = 8;// Number of Trial Orientations 
-  size_t              WidomFirstBeadAllocatesize;       //space allocated for WidomFirstBeadResult
+  size_t              WidomFirstBeadAllocatesize = 0;   //space allocated for WidomFirstBeadResult
+  size_t              TrialEnergyOffset = 0;            //tail offset in Blocksum for per-trial reduced energies
 };
 
 static __global__ void Aaccess_device_random(double3* device_random)

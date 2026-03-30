@@ -639,7 +639,37 @@ static __global__ void Check_Block_Pocket_Positions(Boxsize Box, const double3* 
   const size_t i = blockIdx.x * blockDim.x + threadIdx.x;
   if(i >= positionCount)
     return;
-  device_flag[i] = DeviceBlockedPocket(centers, radii, pocketCount, invertBlockPockets, positions[i], Box);
+  const bool blocked = DeviceBlockedPocket(centers, radii, pocketCount, invertBlockPockets, positions[i], Box);
+  device_flag[i] = blocked;
+}
+
+static __global__ void Reset_Block_Pocket_Summary(BlockPocketSummary* summary)
+{
+  if(blockIdx.x != 0 || threadIdx.x != 0 || summary == nullptr)
+    return;
+  summary->firstBlockedIndex = BlockPocketSummaryNoHit();
+  summary->blockedCount = 0;
+}
+
+static __global__ void Check_Block_Pocket_Positions_With_Summary(Boxsize Box, const double3* positions, size_t positionCount, bool* device_flag, const double3* centers, const double* radii, size_t pocketCount, bool invertBlockPockets, BlockPocketSummary* summary)
+{
+  const size_t i = blockIdx.x * blockDim.x + threadIdx.x;
+  if(i >= positionCount)
+    return;
+  const bool blocked = DeviceBlockedPocket(centers, radii, pocketCount, invertBlockPockets, positions[i], Box);
+  device_flag[i] = blocked;
+  if(blocked)
+  {
+    atomicMin(&summary->firstBlockedIndex, static_cast<unsigned int>(i));
+    atomicAdd(&summary->blockedCount, 1u);
+  }
+}
+
+static __global__ void Set_Device_Flags(bool* device_flag, size_t positionCount, bool value)
+{
+  const size_t i = blockIdx.x * blockDim.x + threadIdx.x;
+  if(i < positionCount)
+    device_flag[i] = value;
 }
 
 inline void EnsureBlockPocketStatisticsCapacity(Components& SystemComponents, size_t component)
@@ -695,21 +725,25 @@ inline void RecordBlockedPocketStatistics(Components& SystemComponents, size_t c
     SystemComponents.BlockPocketBlockedByMove[component][move_type] += static_cast<double>(blockedCount);
 }
 
-inline void LaunchBlockPocketChecks(Components& SystemComponents, Simulations& Sims, size_t component, const double3* device_positions, size_t positionCount)
+inline BlockPocketSummary LaunchBlockPocketChecks(Components& SystemComponents, Simulations& Sims, size_t component, const double3* device_positions, size_t positionCount)
 {
   if(positionCount == 0)
-    return;
+    return {BlockPocketSummaryNoHit(), 0};
+  if(positionCount > static_cast<size_t>(std::numeric_limits<unsigned int>::max()))
+    throw std::runtime_error("Blocked pocket position count exceeds 32-bit device summary range");
   const size_t threads = positionCount < DEFAULTTHREAD ? positionCount : DEFAULTTHREAD;
   const size_t blocks = (positionCount + threads - 1) / threads;
   const bool invertBlockPockets = (component < SystemComponents.InvertBlockPockets.size()) && SystemComponents.InvertBlockPockets[component];
-  Check_Block_Pocket_Positions<<<blocks, threads>>>(Sims.Box, device_positions, positionCount, Sims.device_flag,
-                                                    SystemComponents.device_BlockPocketCenters[component],
-                                                    SystemComponents.device_BlockPocketRadii[component],
-                                                    SystemComponents.BlockPocketCenters[component].size(),
-                                                    invertBlockPockets);
+  Reset_Block_Pocket_Summary<<<1, 1>>>((BlockPocketSummary*)Sims.device_block_pocket_summary);
+  checkCUDAError("error resetting block pocket summary");
+  Check_Block_Pocket_Positions_With_Summary<<<blocks, threads>>>(Sims.Box, device_positions, positionCount, Sims.device_flag,
+                                                                 SystemComponents.device_BlockPocketCenters[component],
+                                                                 SystemComponents.device_BlockPocketRadii[component],
+                                                                 SystemComponents.BlockPocketCenters[component].size(),
+                                                                 invertBlockPockets,
+                                                                 (BlockPocketSummary*)Sims.device_block_pocket_summary);
   checkCUDAError("error checking block pockets on the GPU");
-  cudaDeviceSynchronize();
-  CopyDeviceFlagsToHost(SystemComponents, Sims, positionCount);
+  return CopyBlockPocketSummaryToHost(Sims);
 }
 
 inline bool RejectSequentialBlockedPocketPositions(Components& SystemComponents, Simulations& Sims, size_t component, const double3* device_positions, size_t positionCount, int move_type)
@@ -717,27 +751,13 @@ inline bool RejectSequentialBlockedPocketPositions(Components& SystemComponents,
   if(!ComponentHasDeviceBlockPockets(SystemComponents, component) || positionCount == 0)
     return false;
 
-  LaunchBlockPocketChecks(SystemComponents, Sims, component, device_positions, positionCount);
-
-  size_t checksPerformed = 0;
-  bool blocked = false;
-  for(size_t i = 0; i < positionCount; i++)
-  {
-    checksPerformed++;
-    if(SystemComponents.flag[i])
-    {
-      blocked = true;
-      break;
-    }
-  }
+  const BlockPocketSummary summary = LaunchBlockPocketChecks(SystemComponents, Sims, component, device_positions, positionCount);
+  const bool blocked = BlockPocketSummaryHasBlocked(summary);
+  size_t checksPerformed = positionCount;
+  if(blocked)
+    checksPerformed = static_cast<size_t>(summary.firstBlockedIndex) + 1;
 
   RecordBlockedPocketStatistics(SystemComponents, component, move_type, checksPerformed, blocked ? 1 : 0);
-
-  if(blocked)
-  {
-    bool blockedFlag = true;
-    cudaMemcpy(Sims.device_flag, &blockedFlag, sizeof(bool), cudaMemcpyHostToDevice);
-  }
   return blocked;
 }
 
@@ -746,26 +766,17 @@ inline void ApplyBlockedPocketTrialFlags(Components& SystemComponents, Simulatio
   if(!ComponentHasDeviceBlockPockets(SystemComponents, component) || positionCount == 0)
     return;
 
-  LaunchBlockPocketChecks(SystemComponents, Sims, component, device_positions, positionCount);
-
-  size_t checksPerformed = 0;
-  size_t blockedCount = 0;
-  if(SystemComponents.flag[0])
+  const BlockPocketSummary summary = LaunchBlockPocketChecks(SystemComponents, Sims, component, device_positions, positionCount);
+  size_t checksPerformed = positionCount;
+  size_t blockedCount = static_cast<size_t>(summary.blockedCount);
+  if(summary.firstBlockedIndex == 0)
   {
     checksPerformed = 1;
     blockedCount = 1;
-    for(size_t i = 0; i < positionCount; i++)
-      SystemComponents.flag[i] = true;
-    cudaMemcpy(Sims.device_flag, SystemComponents.flag, positionCount * sizeof(bool), cudaMemcpyHostToDevice);
-  }
-  else
-  {
-    checksPerformed = positionCount;
-    for(size_t i = 1; i < positionCount; i++)
-    {
-      if(SystemComponents.flag[i])
-        blockedCount++;
-    }
+    const size_t threads = positionCount < DEFAULTTHREAD ? positionCount : DEFAULTTHREAD;
+    const size_t blocks = (positionCount + threads - 1) / threads;
+    Set_Device_Flags<<<blocks, threads>>>(Sims.device_flag, positionCount, true);
+    checkCUDAError("error setting blocked pocket flags");
   }
 
   RecordBlockedPocketStatistics(SystemComponents, component, move_type, checksPerformed, blockedCount);
