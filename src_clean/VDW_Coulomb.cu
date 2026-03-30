@@ -1178,7 +1178,7 @@ __global__ void Energy_difference_LambdaChange(Boxsize Box, Atoms* System, Atoms
   }
 }
 
-__global__ void Calculate_Multiple_Trial_Energy_VDWReal(Boxsize Box, Atoms* System, Atoms NewMol, ForceField FF, double* Blocksum, size_t ComponentID, size_t totalAtoms, bool* flag, size_t totalthreads, size_t chainsize, size_t NblockForTrial, size_t HG_Nblock, int3 NComps, int2* ExcludeList)
+__global__ void Calculate_Multiple_Trial_Energy_VDWReal(Boxsize Box, Atoms* System, Atoms NewMol, ForceField FF, double* Blocksum, double* ReducedTrials, size_t ComponentID, size_t totalAtoms, bool* flag, size_t totalthreads, size_t chainsize, size_t NblockForTrial, size_t HG_Nblock, int3 NComps, int2* ExcludeList)
 {
   //Dividing Nblocks into Nblocks for host-guest and for guest-guest//
   //NblockForTrial = HG_Nblock + GG_Nblock;
@@ -1201,7 +1201,7 @@ __global__ void Calculate_Multiple_Trial_Energy_VDWReal(Boxsize Box, Atoms* Syst
   sdata[threadIdx.x] = 0.0; sdata[threadIdx.x + blockDim.x] = 0.0;
   //Initialize Blocksum//
   size_t StoreId = blockIdx.x + trial * NblockForTrial;
-  if(cache_id == 0) { Blocksum[StoreId] = 0.0; Blocksum[StoreId + NblockForTrial] = 0.0; }
+  if(cache_id == 0 && !ReducedTrials) { Blocksum[StoreId] = 0.0; Blocksum[StoreId + NblockForTrial] = 0.0; }
 
   //__shared__ bool Blockflag = false;
 
@@ -1295,8 +1295,12 @@ __global__ void Calculate_Multiple_Trial_Energy_VDWReal(Boxsize Box, Atoms* Syst
         //printf("typeA: %lu, typeB: %lu, FF.size: %lu, row: %lu\n", typeA, typeB, FF.size, row);
         const double FFarg[4] = {FF.epsilon[row], FF.sigma[row], FF.z[row], FF.shift[row]};
         VDW(FFarg, rr_dot, scaling, result); 
-        if(result[0] > FF.OverlapCriteria){ flag[trial]=true; }
-        if(rr_dot < 0.01) {flag[trial]=true; } //DistanceCheck//
+        bool overlap = (result[0] > FF.OverlapCriteria) || (rr_dot < 0.01);
+        if(overlap)
+        {
+          flag[trial]=true;
+          if(ReducedTrials) atomicAdd(&ReducedTrials[trial * 5 + 4], 1.0);
+        }
         tempy.x += result[0];
         //DEBUG//
         /*
@@ -1341,10 +1345,27 @@ __global__ void Calculate_Multiple_Trial_Energy_VDWReal(Boxsize Box, Atoms* Syst
     }
     if(cache_id == 0) 
     {
-     Blocksum[StoreId] = sdata[0];
-     Blocksum[StoreId + NblockForTrial] = sdata[blockDim.x];
-     //if(trial_blockID >= HG_Nblock) 
-    //printf("GG, trial: %lu, BlockID: %lu, data: %.5f\n", trial, blockIdx.x, sdata[0]);
+      if(ReducedTrials)
+      {
+        size_t out = trial * 5;
+        if(trial_blockID < HG_Nblock)
+        {
+          atomicAdd(&ReducedTrials[out], sdata[0]);
+          atomicAdd(&ReducedTrials[out + 2], sdata[blockDim.x]);
+        }
+        else
+        {
+          atomicAdd(&ReducedTrials[out + 1], sdata[0]);
+          atomicAdd(&ReducedTrials[out + 3], sdata[blockDim.x]);
+        }
+      }
+      else
+      {
+        Blocksum[StoreId] = sdata[0];
+        Blocksum[StoreId + NblockForTrial] = sdata[blockDim.x];
+      }
+      //if(trial_blockID >= HG_Nblock) 
+      //printf("GG, trial: %lu, BlockID: %lu, data: %.5f\n", trial, blockIdx.x, sdata[0]);
     }
   //}
 }

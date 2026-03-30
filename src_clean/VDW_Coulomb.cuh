@@ -85,7 +85,7 @@ __global__ void one_thread_GPU_test(Boxsize Box, Atoms* d_a, ForceField FF, doub
 /////////////////////////////////////////////
 __global__ void Calculate_Single_Body_Energy_VDWReal(Boxsize Box, Atoms* System, Atoms Old, Atoms New, ForceField FF, double* BlockEnergy, size_t ComponentID, size_t totalAtoms, size_t chainsize, bool* flag, int3 Nblocks, bool Do_New, bool Do_Old, int3 NComps);
 
-__global__ void Calculate_Multiple_Trial_Energy_VDWReal(Boxsize Box, Atoms* System, Atoms NewMol, ForceField FF, double* Blocksum, size_t ComponentID, size_t totalAtoms, bool* flag, size_t totalthreads, size_t chainsize, size_t NblockForTrial, size_t HG_Nblock, int3 NComps, int2* ExcludeList);
+__global__ void Calculate_Multiple_Trial_Energy_VDWReal(Boxsize Box, Atoms* System, Atoms NewMol, ForceField FF, double* Blocksum, double* ReducedTrials, size_t ComponentID, size_t totalAtoms, bool* flag, size_t totalthreads, size_t chainsize, size_t NblockForTrial, size_t HG_Nblock, int3 NComps, int2* ExcludeList);
 
 __global__ void REZERO_VALS(double* vals, size_t size);
 

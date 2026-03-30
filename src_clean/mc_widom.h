@@ -112,40 +112,6 @@ inline void Host_sum_Widom_Trial_Energies(Components& SystemComponents, size_t N
   }
 }
 
-static __global__ void Reduce_Widom_Blocksum_PerTrial(const double* blocksum, const bool* flag, double* reduced, size_t NumberWidomTrials, size_t HG_Nblock, size_t HGGG_Nblock)
-{
-  const size_t trial = blockIdx.x * blockDim.x + threadIdx.x;
-  if(trial >= NumberWidomTrials) return;
-
-  const size_t out = trial * 5;
-  if(flag[trial])
-  {
-    reduced[out] = 0.0;
-    reduced[out + 1] = 0.0;
-    reduced[out + 2] = 0.0;
-    reduced[out + 3] = 0.0;
-    reduced[out + 4] = 1.0;
-    return;
-  }
-
-  const size_t location = trial * HGGG_Nblock * 2;
-  double HG_vdw = 0.0;
-  double GG_vdw = 0.0;
-  double HG_real = 0.0;
-  double GG_real = 0.0;
-
-  for(size_t ijk = 0; ijk < HG_Nblock; ijk++) HG_vdw += blocksum[location + ijk];
-  for(size_t ijk = HG_Nblock; ijk < HGGG_Nblock; ijk++) GG_vdw += blocksum[location + ijk];
-  for(size_t ijk = HGGG_Nblock; ijk < HG_Nblock + HGGG_Nblock; ijk++) HG_real += blocksum[location + ijk];
-  for(size_t ijk = HG_Nblock + HGGG_Nblock; ijk < HGGG_Nblock + HGGG_Nblock; ijk++) GG_real += blocksum[location + ijk];
-
-  reduced[out] = HG_vdw;
-  reduced[out + 1] = GG_vdw;
-  reduced[out + 2] = HG_real;
-  reduced[out + 3] = GG_real;
-  reduced[out + 4] = 0.0;
-}
-
 inline void CBMC_PairwiseInteractions(Variables& Vars, size_t systemId, Components& SystemComponents, Simulations& Sims, size_t NTrials, size_t chainsize)
 {
   WidomStruct& Widom = Vars.Widom[systemId];
@@ -167,13 +133,16 @@ inline void CBMC_PairwiseInteractions(Variables& Vars, size_t systemId, Componen
   size_t HGGG_Nblock  = HG_Nblock + GG_Nblock;
   if(Atomsize != 0)
   {
-    Calculate_Multiple_Trial_Energy_VDWReal<<<HGGG_Nblock * NTrials, HGGG_Nthread, 2 * HGGG_Nthread * sizeof(double)>>>(Sims.Box, Sims.d_a, Sims.New, Vars.device_FF, Sims.Blocksum, component, Atomsize, Sims.device_flag, threadsNeeded, chainsize, HGGG_Nblock, HG_Nblock, SystemComponents.NComponents, Sims.ExcludeList); checkCUDAError("Error calculating energies (PARTIAL SUM HGGG)");
+    double* ReducedTrials = nullptr;
+    if(Widom.UseGPUReduction)
+    {
+      ReducedTrials = Sims.Blocksum + Widom.TrialEnergyOffset;
+      cudaMemset(ReducedTrials, 0, 5 * NTrials * sizeof(double));
+    }
+    Calculate_Multiple_Trial_Energy_VDWReal<<<HGGG_Nblock * NTrials, HGGG_Nthread, 2 * HGGG_Nthread * sizeof(double)>>>(Sims.Box, Sims.d_a, Sims.New, Vars.device_FF, Sims.Blocksum, ReducedTrials, component, Atomsize, Sims.device_flag, threadsNeeded, chainsize, HGGG_Nblock, HG_Nblock, SystemComponents.NComponents, Sims.ExcludeList); checkCUDAError("Error calculating energies (PARTIAL SUM HGGG)");
     cudaDeviceSynchronize();
     if(Widom.UseGPUReduction)
     {
-      size_t reduce_Nthread = 0; size_t reduce_Nblock = 0; Setup_threadblock(NTrials, reduce_Nblock, reduce_Nthread);
-      Reduce_Widom_Blocksum_PerTrial<<<reduce_Nblock, reduce_Nthread>>>(Sims.Blocksum, Sims.device_flag, Sims.Blocksum + Widom.TrialEnergyOffset, NTrials, HG_Nblock, HGGG_Nblock); checkCUDAError("Error reducing Widom trial energies");
-      cudaDeviceSynchronize();
       CopyBlocksumSliceToHost(SystemComponents, Sims, Widom.TrialEnergyOffset, 5 * NTrials);
     }
     else
