@@ -37,6 +37,7 @@ The recent runtime work in `src_clean/` did four things:
 4. Added device-side final reduction for the single-body / CBCF lambda VDW+real move-energy path.
 5. Reserved explicit tail scratch inside `Sim.Blocksum` and preserved that tail during `Blocksum` growth.
 6. Replaced the DNN adsorbate-mask managed allocation with an explicit host pointer plus device mirror.
+7. Replaced the `Vars.Sims` managed wrapper with a plain host allocation and removed the last kernels that depended on passing `Simulations` itself into device code.
 
 ## Intended usage
 
@@ -65,6 +66,7 @@ On the local GPU 1 benchmark setup used during this refactor work:
 * the added Ewald move-delta reduction was smaller but still positive
 * the added single-body / lambda move-energy reduction was positive on a charged, move-heavy Bae benchmark
 * removing explicit host/device rendezvous points in the hot path was not a win under many-process MPS load and was reverted
+* converting `Vars.Sims` to a host wrapper was throughput-neutral to slightly positive on the standard 16-way Widom benchmark while also removing the last `cudaMallocManaged(...)` dependency in `src_clean/`
 
 So the current recommendation is:
 
@@ -77,7 +79,7 @@ So the current recommendation is:
 These changes do not solve the larger architectural limits by themselves:
 
 * one single Monte Carlo chain still has a serial acceptance frontier
-* the code still has remaining managed-memory / host-orchestration overhead outside these reduction paths, especially `Vars.Sims`
+* the code still has substantial host-orchestration overhead even after the managed-memory cleanup
 * external job concurrency can still saturate at a lower-throughput point if too many jobs share one GPU
 
 The next likely optimization areas are:

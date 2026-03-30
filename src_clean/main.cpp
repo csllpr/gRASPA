@@ -130,10 +130,8 @@ Variables Initialize(void) //for pybind
   printf("DONE Reading Model Info from simulation.input file\n");
   //setenv("CUDA_VISIBLE_DEVICES", "1", 1); //After setting up tf model, set the GPU as visible again//
 
- 
-  // UNIFIED MEMORY FOR DIFFERENT SIMULATIONS //
-  //Simulations *Sims; 
-  cudaMallocManaged(&Vars.Sims, NumberOfSimulations*sizeof(Simulations));
+  // Host-side wrapper for per-simulation device resources //
+  Vars.Sims = new Simulations[NumberOfSimulations]();
   read_Gibbs_and_Cycle_Stats(Vars, Vars.SetMaxStep, Vars.MaxStepPerCycle);
   printf("-------------------------------------------------------\n");
   // PREPARE VALUES FOR THE FORCEFIELD STRUCT //

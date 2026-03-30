@@ -1,4 +1,4 @@
-__global__ void Prepare_LambdaChange(Atoms* d_a, Atoms Mol, Simulations Sims, ForceField FF, size_t start_position, size_t SelectedComponent, bool* device_flag)
+__global__ void Prepare_LambdaChange(Atoms* d_a, Atoms Mol, size_t start_position, size_t SelectedComponent, bool* device_flag)
 {
   size_t i = blockIdx.x * blockDim.x + threadIdx.x;
   size_t real_pos = start_position + i;
@@ -40,7 +40,7 @@ static inline MoveEnergy CBCF_LambdaChange(Variables& Vars, size_t systemId, siz
     throw std::runtime_error("Molecule size is greater than allocated size, Why so big?\n");
   }
   start_position = SelectedMolInComponent*SystemComponents.Moleculesize[SelectedComponent];
-  Prepare_LambdaChange<<<1, Molsize>>>(Sims.d_a, Sims.Old, Sims, FF, start_position, SelectedComponent, Sims.device_flag);
+  Prepare_LambdaChange<<<1, Molsize>>>(Sims.d_a, Sims.Old, start_position, SelectedComponent, Sims.device_flag);
   
   // Setup for the pairwise calculation //
   size_t NHostAtom = 0; size_t NGuestAtom = 0;

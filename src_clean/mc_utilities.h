@@ -482,127 +482,127 @@ static __device__ void RotationAroundAxis(double3* pos, size_t i, double theta, 
   pos[i].z=c;
 }
 
-static __global__ void get_new_position(Simulations& Sim, ForceField FF, size_t start_position, size_t SelectedComponent, double3 MaxChange, double3* RANDOM, size_t index, int MoveType)
+static __global__ void get_new_position(Atoms* d_a, Atoms Old, Atoms New, Boxsize Box, bool* device_flag, size_t start_position, size_t SelectedComponent, double3 MaxChange, double3* RANDOM, size_t index, int MoveType)
 {
   const size_t i = blockIdx.x * blockDim.x + threadIdx.x;
   const size_t real_pos = start_position + i;
 
-  const double3 pos       = Sim.d_a[SelectedComponent].pos[real_pos];
-  const double  scale     = Sim.d_a[SelectedComponent].scale[real_pos];
-  const double  charge    = Sim.d_a[SelectedComponent].charge[real_pos];
-  const double  scaleCoul = Sim.d_a[SelectedComponent].scaleCoul[real_pos];
-  const size_t  Type      = Sim.d_a[SelectedComponent].Type[real_pos];
-  const size_t  MolID     = Sim.d_a[SelectedComponent].MolID[real_pos];
+  const double3 pos       = d_a[SelectedComponent].pos[real_pos];
+  const double  scale     = d_a[SelectedComponent].scale[real_pos];
+  const double  charge    = d_a[SelectedComponent].charge[real_pos];
+  const double  scaleCoul = d_a[SelectedComponent].scaleCoul[real_pos];
+  const size_t  Type      = d_a[SelectedComponent].Type[real_pos];
+  const size_t  MolID     = d_a[SelectedComponent].MolID[real_pos];
 
   switch(MoveType)
   {
     case TRANSLATION://TRANSLATION:
     {
-      Sim.New.pos[i] = pos + MaxChange * 2.0 * (RANDOM[index] - 0.5);
-      Sim.New.scale[i] = scale; 
-      Sim.New.charge[i] = charge; 
-      Sim.New.scaleCoul[i] = scaleCoul; 
-      Sim.New.Type[i] = Type; 
-      Sim.New.MolID[i] = MolID;
+      New.pos[i] = pos + MaxChange * 2.0 * (RANDOM[index] - 0.5);
+      New.scale[i] = scale; 
+      New.charge[i] = charge; 
+      New.scaleCoul[i] = scaleCoul; 
+      New.Type[i] = Type; 
+      New.MolID[i] = MolID;
 
-      Sim.Old.pos[i] = pos;
-      Sim.Old.scale[i] = scale; 
-      Sim.Old.charge[i] = charge; 
-      Sim.Old.scaleCoul[i] = scaleCoul; 
-      Sim.Old.Type[i] = Type; 
-      Sim.Old.MolID[i] = MolID;
+      Old.pos[i] = pos;
+      Old.scale[i] = scale; 
+      Old.charge[i] = charge; 
+      Old.scaleCoul[i] = scaleCoul; 
+      Old.Type[i] = Type; 
+      Old.MolID[i] = MolID;
       break;
     }
     case ROTATION://ROTATION:
     {
-      Sim.New.pos[i] = pos - Sim.d_a[SelectedComponent].pos[start_position];
+      New.pos[i] = pos - d_a[SelectedComponent].pos[start_position];
       const double3 Angle = MaxChange * 2.0 * (RANDOM[index] - 0.5);
       
-      RotationAroundAxis(Sim.New.pos, i, Angle.x, {1.0, 0.0, 0.0}); //X
-      RotationAroundAxis(Sim.New.pos, i, Angle.y, {0.0, 1.0, 0.0}); //Y
-      RotationAroundAxis(Sim.New.pos, i, Angle.z, {0.0, 0.0, 1.0}); //Z
+      RotationAroundAxis(New.pos, i, Angle.x, {1.0, 0.0, 0.0}); //X
+      RotationAroundAxis(New.pos, i, Angle.y, {0.0, 1.0, 0.0}); //Y
+      RotationAroundAxis(New.pos, i, Angle.z, {0.0, 0.0, 1.0}); //Z
       
-      Sim.New.pos[i] += Sim.d_a[SelectedComponent].pos[start_position];
+      New.pos[i] += d_a[SelectedComponent].pos[start_position];
 
-      Sim.New.scale[i] = scale; 
-      Sim.New.charge[i] = charge; 
-      Sim.New.scaleCoul[i] = scaleCoul; 
-      Sim.New.Type[i] = Type; 
-      Sim.New.MolID[i] = MolID;
+      New.scale[i] = scale; 
+      New.charge[i] = charge; 
+      New.scaleCoul[i] = scaleCoul; 
+      New.Type[i] = Type; 
+      New.MolID[i] = MolID;
 
-      Sim.Old.pos[i] = pos;
-      Sim.Old.scale[i] = scale; 
-      Sim.Old.charge[i] = charge; 
-      Sim.Old.scaleCoul[i] = scaleCoul; 
-      Sim.Old.Type[i] = Type; 
-      Sim.Old.MolID[i] = MolID;
+      Old.pos[i] = pos;
+      Old.scale[i] = scale; 
+      Old.charge[i] = charge; 
+      Old.scaleCoul[i] = scaleCoul; 
+      Old.Type[i] = Type; 
+      Old.MolID[i] = MolID;
       break;
     }
     case SINGLE_INSERTION:
     { 
       //First ROTATION using QUATERNIONS//
       //Then TRANSLATION//
-      double3 BoxLength = {Sim.Box.Cell[0], Sim.Box.Cell[4], Sim.Box.Cell[8]};
+      double3 BoxLength = {Box.Cell[0], Box.Cell[4], Box.Cell[8]};
       double3 NEW_COM   = BoxLength * RANDOM[index];
-      if(i == 0) Sim.New.pos[0] = NEW_COM;
+      if(i == 0) New.pos[0] = NEW_COM;
       if(i > 0)
       {
-        double3 Vec = pos - Sim.d_a[SelectedComponent].pos[start_position];
+        double3 Vec = pos - d_a[SelectedComponent].pos[start_position];
         Rotate_Quaternions(Vec, RANDOM[index + 1]);
-        Sim.New.pos[i] = Vec + NEW_COM;
+        New.pos[i] = Vec + NEW_COM;
       }
-      Sim.New.scale[i] = scale;
-      Sim.New.charge[i] = charge;
-      Sim.New.scaleCoul[i] = scaleCoul;
-      Sim.New.Type[i] = Type;
-      Sim.New.MolID[i] = Sim.d_a[SelectedComponent].size / Sim.d_a[SelectedComponent].Molsize;
+      New.scale[i] = scale;
+      New.charge[i] = charge;
+      New.scaleCoul[i] = scaleCoul;
+      New.Type[i] = Type;
+      New.MolID[i] = d_a[SelectedComponent].size / d_a[SelectedComponent].Molsize;
       break;
     }
     case SINGLE_DELETION: //Just Copy the old positions//
     {
-      Sim.Old.pos[i] = pos;
-      Sim.Old.scale[i] = scale; 
-      Sim.Old.charge[i] = charge; 
-      Sim.Old.scaleCoul[i] = scaleCoul; 
-      Sim.Old.Type[i] = Type; 
-      Sim.Old.MolID[i] = MolID;
+      Old.pos[i] = pos;
+      Old.scale[i] = scale; 
+      Old.charge[i] = charge; 
+      Old.scaleCoul[i] = scaleCoul; 
+      Old.Type[i] = Type; 
+      Old.MolID[i] = MolID;
     }
     
     case SPECIAL_ROTATION:
     {
       // Rotation around axis (first/second atom) in the molecule //
-      Sim.New.pos[i] = pos - Sim.d_a[SelectedComponent].pos[start_position];
+      New.pos[i] = pos - d_a[SelectedComponent].pos[start_position];
       
       const double3 Angle = MaxChange * 2.0 * (RANDOM[index] - 0.5);
       //Take direction, normalize//
       double3 Axis;
       //if(i == 0)
       //{ 
-        Axis = Sim.d_a[SelectedComponent].pos[start_position + 1] - Sim.d_a[SelectedComponent].pos[start_position];
+        Axis = d_a[SelectedComponent].pos[start_position + 1] - d_a[SelectedComponent].pos[start_position];
         double norm = sqrt(dot(Axis, Axis));
         Axis *= 1.0/norm;
-        //printf("Atom %lu, DistVec: %.5f %.5f %.5f\n", i, Sim.New.pos[i].x, Sim.New.pos[i].y, Sim.New.pos[i].z);
+        //printf("Atom %lu, DistVec: %.5f %.5f %.5f\n", i, New.pos[i].x, New.pos[i].y, New.pos[i].z);
       //}
       if(i != 0 && i != 1) //Do not rotate the end points of the vector
-        RotationAroundAxis(Sim.New.pos, i, 3.0 * Angle.x, Axis);
-      Sim.New.pos[i] += Sim.d_a[SelectedComponent].pos[start_position];
+        RotationAroundAxis(New.pos, i, 3.0 * Angle.x, Axis);
+      New.pos[i] += d_a[SelectedComponent].pos[start_position];
 
-      Sim.New.scale[i] = scale;
-      Sim.New.charge[i] = charge;
-      Sim.New.scaleCoul[i] = scaleCoul;
-      Sim.New.Type[i] = Type;
-      Sim.New.MolID[i] = MolID;
+      New.scale[i] = scale;
+      New.charge[i] = charge;
+      New.scaleCoul[i] = scaleCoul;
+      New.Type[i] = Type;
+      New.MolID[i] = MolID;
 
-      Sim.Old.pos[i] = pos;
-      Sim.Old.scale[i] = scale;
-      Sim.Old.charge[i] = charge;
-      Sim.Old.scaleCoul[i] = scaleCoul;
-      Sim.Old.Type[i] = Type;
-      Sim.Old.MolID[i] = MolID;
-      //printf("Atom %lu, Angle: %.5f, Axis: %.5f %.5f %.5f, xyz: %.5f %.5f %.5f\n", i, Angle.x, Axis.x, Axis.y, Axis.z, Sim.New.pos[i].x, Sim.New.pos[i].y, Sim.New.pos[i].z);
+      Old.pos[i] = pos;
+      Old.scale[i] = scale;
+      Old.charge[i] = charge;
+      Old.scaleCoul[i] = scaleCoul;
+      Old.Type[i] = Type;
+      Old.MolID[i] = MolID;
+      //printf("Atom %lu, Angle: %.5f, Axis: %.5f %.5f %.5f, xyz: %.5f %.5f %.5f\n", i, Angle.x, Axis.x, Axis.y, Axis.z, New.pos[i].x, New.pos[i].y, New.pos[i].z);
     }
   }
-  Sim.device_flag[i] = false;
+  device_flag[i] = false;
 }
 
 static inline __device__ bool DeviceBlockedPocket(const double3* centers, const double* radii, size_t count, bool invertBlockPockets, const double3& pos, Boxsize Box)

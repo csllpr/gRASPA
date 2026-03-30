@@ -76,7 +76,7 @@ inline void SingleBody_Prepare(Variables& Vars, size_t systemId)
 
   //Zhao's note: possible bug, you may only need 3 instead of 3 * N random numbers//
   Random.Check(Molsize);
-  get_new_position<<<1, Molsize>>>(Sims, FF, start_position, SelectedComponent, MaxChange, Random.device_random, Random.offset, MoveType);
+  get_new_position<<<1, Molsize>>>(Sims.d_a, Sims.Old, Sims.New, Sims.Box, Sims.device_flag, start_position, SelectedComponent, MaxChange, Random.device_random, Random.offset, MoveType);
   Random.Update(Molsize);
   
   // Check block pockets for all moves that create new positions (matching RASPA2)
