@@ -143,8 +143,8 @@ void VDWReal_Total_CPU(Boxsize Box, Atoms* Host_System, Atoms* System, ForceFiel
                 cutoff_count++;
                 const double scaling = scaleA * scaleB;
                 const size_t row = typeA*FF.size+typeB;
-                const double FFarg[4] = {FF.epsilon[row], FF.sigma[row], FF.z[row], FF.shift[row]};
-                VDW(FFarg, rr_dot, scaling, result);
+                const double FFarg[5] = {FF.epsilon[row], FF.sigma[row], FF.z[row], FF.shift[row], FF.C10[row]};
+                VDW(FFarg, rr_dot, scaling, result, FF.Use1264);
                 Total_VDW[InteractionType] += 0.5*result[0];
                 //if((compi > 0) && (compj > 0)) printf("Compi: %zu Mol[%zu], compj: %zu Mol[%zu], GG_E: %.5f\n", compi, MoleculeID, compj, MoleculeIDB, result[0]);
                 VDW_energy   += 0.5*result[0];
@@ -272,8 +272,8 @@ __global__ void one_thread_GPU_test(Boxsize Box, Atoms* System, ForceField FF, d
                 cutoff_count++;
                 const double scaling = scaleA * scaleB;
                 const size_t row = typeA*FF.size+typeB;
-                const double FFarg[4] = {FF.epsilon[row], FF.sigma[row], FF.z[row], FF.shift[row]};
-                VDW(FFarg, rr_dot, scaling, result);
+                const double FFarg[5] = {FF.epsilon[row], FF.sigma[row], FF.z[row], FF.shift[row], FF.C10[row]};
+                VDW(FFarg, rr_dot, scaling, result, FF.Use1264);
                 Total_energy += 0.5*result[0];
                 VDW_energy   += 0.5*result[0];
                 if(DEBUG){if(MoleculeID == 5)
@@ -763,8 +763,8 @@ __global__ void Calculate_Single_Body_Energy_VDWReal(Boxsize Box, Atoms* System,
       const double scaleB = New.scale[j];
       const double scaling = scaleA * scaleB;
       const size_t row = typeA*FF.size+typeB;
-      const double FFarg[4] = {FF.epsilon[row], FF.sigma[row], FF.z[row], FF.shift[row]};
-      VDW(FFarg, rr_dot, scaling, result);
+      const double FFarg[5] = {FF.epsilon[row], FF.sigma[row], FF.z[row], FF.shift[row], FF.C10[row]};
+      VDW(FFarg, rr_dot, scaling, result, FF.Use1264);
       if(result[0] > FF.OverlapCriteria) { /*Blockflag = true;*/ flag[0] = true; }
       if(rr_dot < 0.01)                  { /*Blockflag = true;*/ flag[0] = true; } //DistanceCheck//
       tempy.x  += result[0];
@@ -796,8 +796,8 @@ __global__ void Calculate_Single_Body_Energy_VDWReal(Boxsize Box, Atoms* System,
       const double scaleB = Old.scale[j];
       const double scaling = scaleA * scaleB;
       const size_t row = typeA*FF.size+typeB;
-      const double FFarg[4] = {FF.epsilon[row], FF.sigma[row], FF.z[row], FF.shift[row]};
-      VDW(FFarg, rr_dot, scaling, result);
+      const double FFarg[5] = {FF.epsilon[row], FF.sigma[row], FF.z[row], FF.shift[row], FF.C10[row]};
+      VDW(FFarg, rr_dot, scaling, result, FF.Use1264);
       tempy.x  -= result[0];
       tempdU   -= result[1];
     }
@@ -982,12 +982,12 @@ __global__ void Calculate_Single_Body_Energy_VDWReal_LambdaChange(Boxsize Box, A
       const double Oldscaling = scaleA * OldscaleB;
       const double Newscaling = scaleA * NewscaleB;
       const size_t row = typeA*FF.size+typeB;
-      const double FFarg[4] = {FF.epsilon[row], FF.sigma[row], FF.z[row], FF.shift[row]};
-      VDW(FFarg, rr_dot, Oldscaling, result);
+      const double FFarg[5] = {FF.epsilon[row], FF.sigma[row], FF.z[row], FF.shift[row], FF.C10[row]};
+      VDW(FFarg, rr_dot, Oldscaling, result, FF.Use1264);
       tempy.x  -= result[0];
       tempdU   -= result[1];
       //NEW here for fractional molecule//
-      VDW(FFarg, rr_dot, Newscaling, result);
+      VDW(FFarg, rr_dot, Newscaling, result, FF.Use1264);
       tempy.x  += result[0];
       tempdU   += result[1];
       if(result[0] > FF.OverlapCriteria) { /*Blockflag = true;*/ flag[0] = true; }
@@ -1129,11 +1129,11 @@ __global__ void Energy_difference_LambdaChange(Boxsize Box, Atoms* System, Atoms
         const double Oldscaling = scaleA * OldscaleB;
         const double Newscaling = scaleA * NewscaleB;
         const size_t row = typeA*FF.size+typeB;
-        const double FFarg[4] = {FF.epsilon[row], FF.sigma[row], FF.z[row], FF.shift[row]};
-        VDW(FFarg, rr_dot, Oldscaling, result);
+        const double FFarg[5] = {FF.epsilon[row], FF.sigma[row], FF.z[row], FF.shift[row], FF.C10[row]};
+        VDW(FFarg, rr_dot, Oldscaling, result, FF.Use1264);
         tempy  -= result[0];
         tempdU -= result[1];
-        VDW(FFarg, rr_dot, Newscaling, result);
+        VDW(FFarg, rr_dot, Newscaling, result, FF.Use1264);
         if(result[0] > FF.OverlapCriteria){ Blockflag = true; flag[0] = true;}
         tempy  += result[0];
         tempdU += result[1];
@@ -1293,8 +1293,8 @@ __global__ void Calculate_Multiple_Trial_Energy_VDWReal(Boxsize Box, Atoms* Syst
         const double scaling = scaleA * scaleB;
         const size_t row = typeA*FF.size+typeB;
         //printf("typeA: %lu, typeB: %lu, FF.size: %lu, row: %lu\n", typeA, typeB, FF.size, row);
-        const double FFarg[4] = {FF.epsilon[row], FF.sigma[row], FF.z[row], FF.shift[row]};
-        VDW(FFarg, rr_dot, scaling, result); 
+        const double FFarg[5] = {FF.epsilon[row], FF.sigma[row], FF.z[row], FF.shift[row], FF.C10[row]};
+        VDW(FFarg, rr_dot, scaling, result, FF.Use1264);
         bool overlap = (result[0] > FF.OverlapCriteria) || (rr_dot < 0.01);
         if(overlap)
         {
@@ -1399,8 +1399,8 @@ __device__ void VDWCoulEnergy_Total(Boxsize Box, Atoms ComponentA, Atoms Compone
     double result[2] = {0.0, 0.0};
     const double scaling = scaleA * scaleB;
     const size_t row = typeA*FF.size+typeB;
-    const double FFarg[4] = {FF.epsilon[row], FF.sigma[row], FF.z[row], FF.shift[row]};
-    VDW(FFarg, rr_dot, scaling, result);
+    const double FFarg[5] = {FF.epsilon[row], FF.sigma[row], FF.z[row], FF.shift[row], FF.C10[row]};
+    VDW(FFarg, rr_dot, scaling, result, FF.Use1264);
     if(result[0] > FF.OverlapCriteria){ flag[0]=true;}
     if(rr_dot < 0.01) { flag[0]=true; } //DistanceCheck//
     //if(result[0] > FF.OverlapCriteria || rr_dot < 0.01) printf("OVERLAP IN KERNEL!\n");

@@ -1,0 +1,89 @@
+#!/bin/bash
+###############################################################################
+# Quest (Northwestern) Compilation Script for gRASPA — A100 + H100
+#
+# Tested: April 2026 on Quest (qgpu2002 A100, qgpu3006 H100)
+#
+# Compiler : nvhpc/23.3-gcc-10.4.0  (supports cc80 A100 + cc90 H100)
+# CUDA     : 11.8 (bundled in nvhpc 23.3, compatible with driver 570.86.15)
+#
+# Fixes applied vs. older Quest scripts:
+#   1. Uses -gpu=cuda11.8,cc80,cc90 to build for both A100 and H100
+#   2. Prepends gcc-10.3.0/lib64 via -L flag to work around gcc-10.4.0's
+#      libatomic.so having compressed debug sections that ld 2.30 cannot read
+#
+# Source files compiled (vanilla, no ML):
+#   axpy.cu  main.cpp  read_data.cpp  data_struct.cpp  VDW_Coulomb.cu
+#
+# Usage:
+#   1. Navigate to gRASPA source directory (src_clean/)
+#   2. Make this script executable: chmod +x NVC_COMPILE_QUEST_VANILLA
+#   3. Run on a GPU node: ./NVC_COMPILE_QUEST_VANILLA
+#   4. Or submit via: sbatch compile_graspa.job
+#
+# Requirements:
+#   - Access to Quest GPU nodes (A100 or H100)
+#   - nvhpc/23.3-gcc-10.4.0 module (spack_v20d1)
+###############################################################################
+
+set -euo pipefail
+
+# ── modules ──────────────────────────────────────────────────────────────────
+module purge
+module use /hpc/software/spack_v20d1/spack/share/spack/modules/linux-rhel7-x86_64/
+module load nvhpc/23.3-gcc-10.4.0
+
+# ── paths ────────────────────────────────────────────────────────────────────
+CXX="nvc++"
+NVHPC_BASE=$(dirname "$(dirname "$(which nvc++)")")
+
+# CUDA 11.8 libs bundled inside nvhpc 23.3
+CUDA_LIB="${NVHPC_BASE}/cuda/11.8/lib64"
+
+# gcc-10.3.0 libatomic — no compressed debug sections, works with ld 2.30
+# (gcc-10.4.0's copy has SHF_COMPRESSED .debug_aranges that ld 2.30 rejects)
+GOOD_GCC_LIB="/hpc/software/spack_v17d2/spack/opt/spack/linux-rhel7-x86_64/gcc-4.8.5/gcc-10.3.0-353gcsmwg5tvj5tq5zwv3xwmq5xefubj/lib64"
+
+# ── compiler flags ──────────────────────────────────────────────────────────
+#   cuda11.8  : use the CUDA 11.8 toolkit bundled in nvhpc 23.3
+#   cc80      : native code for A100
+#   cc90      : native code for H100
+#   -O3       : maximum optimization
+#   -std=c++20: C++20 standard (required for std::filesystem etc.)
+#   -Minline  : inline function expansion
+#   -fopenmp  : OpenMP support
+#   -cuda     : CUDA support
+#   -stdpar=multicore : standard parallelism for multicore
+NVCFLAG="-O3 -std=c++20 -target=gpu -gpu=cuda11.8,cc80,cc90 -Minline -fopenmp -cuda -stdpar=multicore"
+
+# Put GOOD_GCC_LIB first so ld finds the working libatomic.so before the bad one
+LINKFLAG="-L${GOOD_GCC_LIB} -L${CUDA_LIB} -L/usr/lib64/"
+
+# ── build ───────────────────────────────────────────────────────────────────
+echo "=== gRASPA compile (Quest / A100+H100 / nvhpc 23.3 / CUDA 11.8) ==="
+echo "CXX      : $(which $CXX)"
+echo "FLAGS    : $NVCFLAG"
+echo "LINK     : $LINKFLAG"
+echo ""
+
+rm -f *.o nvc_main.x
+
+for src in axpy.cu main.cpp read_data.cpp data_struct.cpp VDW_Coulomb.cu; do
+    $CXX $NVCFLAG $LINKFLAG -c "$src" \
+        && echo "  OK  $src" \
+        || { echo "FAIL $src"; exit 1; }
+done
+
+echo ""
+echo "Linking..."
+$CXX $NVCFLAG $LINKFLAG \
+    main.o read_data.o axpy.o data_struct.o VDW_Coulomb.o \
+    -o nvc_main.x \
+    && echo "  OK  nvc_main.x" \
+    || { echo "FAIL linking"; exit 1; }
+
+rm -f *.o
+
+echo ""
+ls -lh nvc_main.x
+echo "=== done ==="

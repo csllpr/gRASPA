@@ -1,5 +1,14 @@
 .tmp_backup/
 reference_runs/
-src_clean/nvc_main.x
 Examples/**/output.txt
 benchmark/
+
+# Compiled binary
+src_clean/nvc_main.x
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Claude Code
+.claude/

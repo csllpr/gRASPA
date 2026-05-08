@@ -1,0 +1,16 @@
+# general rule for shifted vs truncated
+truncated
+# general rule tailcorrections
+no
+# number of defined interactions
+7
+# type      interaction           epsilon    sigma
+Mg          lennard-jones         55.8574    2.69141      // UFF
+H           lennard-jones         7.64893    2.84642      // Dreiding
+C           lennard-jones         47.8562    3.47299      // Dreiding
+O           lennard-jones         48.1581    3.03315      // Dreiding
+OwH2O_TIP4PEW  lennard-jones     81.9       3.164        // TIP4PEW
+HwH2O_TIP4PEW  lennard-jones     0.0        0.0          // no LJ
+MwH2O_TIP4PEW  lennard-jones     0.0        0.0          // no LJ
+# general mixing rule for Lennard-Jones
+Lorentz-Berthelot

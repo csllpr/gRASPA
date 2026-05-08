@@ -1,0 +1,10 @@
+# rules to overwrite
+0
+# number of defined interactions
+1
+# type      type2             interaction      p0  p1  p2      p3      p4  p5
+# From RASPA2 reference run: Mg OwTIP4PEW p2=5458 p3=2234 p5=-14427061
+# GENERIC2_HC: U(r) = p0*exp(-p1*r) - p2/r^4 - p3/r^6 - p4/r^8 - p5/r^12
+Mg          OwH2O_TIP4PEW     GENERIC2_HC      0   0   5458    2234    0   -14427061
+# mixing rules to overwrite
+0

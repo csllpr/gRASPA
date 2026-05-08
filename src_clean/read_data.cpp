@@ -701,6 +701,17 @@ void read_FFParams_from_input(Input_Container& Input)
         Input.VDWRealBias = false;
       }
     }
+    // Parse UseLJ1264 keyword: enables 12-6-4 LJ polynomial VDW (Du et al. JCTC 2020)
+    // When yes/true: pre-computes C12/C6 coefficients and reads GENERIC2_HC from force_field.def
+    // When no/false/absent: uses original epsilon/sigma LJ (default, no changes for old users)
+    if (str.find("UseLJ1264", 0) != std::string::npos)
+    {
+      Split_Tab_Space(termsScannedLined, str);
+      if(caseInSensStringCompare(termsScannedLined[1], "yes") || caseInSensStringCompare(termsScannedLined[1], "true"))
+      {
+        Input.Use1264 = true;
+      }
+    }
     if (str.find("Component ", 0) != std::string::npos) //When it reads component, skip//
       break;
   }
@@ -926,6 +937,7 @@ inline std::string trim2(const std::string& s)
     return std::string(start, end + 1);
 }
 
+// Original shift function: computes shift from epsilon/sigma (Use1264=false)
 double Get_Shifted_Value(double epsilon, double sigma, double CutOffSquared)
 {
   double scaling = 1.0;
@@ -936,6 +948,17 @@ double Get_Shifted_Value(double epsilon, double sigma, double CutOffSquared)
   double rri3 = 1.0 / ((temp * temp * temp) + 0.5 * (1.0 - scaling) * (1.0 - scaling));
   double shift = scaling * (4.0 * arg1 * (rri3 * (rri3 - 1.0)));
   return shift;
+}
+
+// Polynomial shift function: computes shift from C12/C6/C4/C10 (Use1264=true)
+double Get_Shifted_Value_Coeff(double C12, double C6, double C4, double C10, double CutOffSquared)
+{
+  double ri2  = 1.0 / CutOffSquared;
+  double ri4  = ri2 * ri2;
+  double ri6  = ri4 * ri2;
+  double ri10 = ri4 * ri6;
+  double ri12 = ri6 * ri6;
+  return C12 * ri12 - C6 * ri6 + C10 * ri10 + C4 * ri4;
 }
 
 double Mixing_Rule_Epsilon(double ep1, double ep2)
@@ -999,9 +1022,14 @@ void ForceFieldParser(Input_Container& Input, PseudoAtomDefinitions& PseudoAtom)
       AtomFF.Name    = termsScannedLined[0];
       AtomFF.epsilon = std::stod(termsScannedLined[2]);
       AtomFF.sigma   = std::stod(termsScannedLined[3]);
+      AtomFF.C4      = 0.0; // default: standard 12-6 LJ
+      if(termsScannedLined[1] == "lennard-jones-1264" && termsScannedLined.size() >= 5)
+      {
+        AtomFF.C4 = std::stod(termsScannedLined[4]); // C_4 parameter in K*A^4
+      }
       AtomFF.shift   = shifted;
       AtomFF.tail    = tail;
-      
+
       Input.AtomFF.push_back(AtomFF);
     }
     counter++;
@@ -1011,26 +1039,48 @@ void ForceFieldParser(Input_Container& Input, PseudoAtomDefinitions& PseudoAtom)
   FFMixfile.close();
 }
 
+// Original tail correction: from epsilon/sigma (Use1264=false)
 static inline double GetTailCorrectionValue(double epsilon, double sigma, double cutoff)
 {
-  //double scaling = 1.0; Zhao's note: Need more care about fractional molecules with tail corrections
   double arg1 = epsilon;
   double arg2 = sigma * sigma * sigma;
   double rr = sqrt(cutoff);
-  double term1= pow(arg2, 4) / (9.0 * pow(rr, 9)); //sigma^12/(9*r^9)
-  double term2= pow(arg2, 2) / (3.0 * pow(rr, 3)); //sigma^6 /(3*r^3)
+  double term1= pow(arg2, 4) / (9.0 * pow(rr, 9));
+  double term2= pow(arg2, 2) / (3.0 * pow(rr, 3));
   double val = 16.0 * 3.14159265358979323846 / 2.0 * arg1 * (term1 - term2);
   return val;
 }
 
-static inline void PrepareTailCorrection(size_t i, size_t j, size_t NPseudoAtoms, std::vector<Tail>& TempTail, std::vector<double>& Mix_Epsilon, std::vector<double>& Mix_Sigma, double cutoff)
+// Polynomial tail correction: from C12/C6/C4/C10 (Use1264=true)
+static inline double GetTailCorrectionValue_Coeff(double C12, double C6, double C4, double C10, double cutoff_sq)
+{
+  double rc = sqrt(cutoff_sq);
+  double rc3 = rc * rc * rc;
+  double rc7 = rc3 * rc3 * rc;
+  double rc9 = rc7 * rc * rc;
+  double pi = 3.14159265358979323846;
+  double val = 4.0 * pi * (C12 / (9.0 * rc9) - C6 / (3.0 * rc3) + C10 / (7.0 * rc7) + C4 / rc);
+  return val;
+}
+
+// Original PrepareTailCorrection (Use1264=false)
+static inline void PrepareTailCorrection_LJ(size_t i, size_t j, size_t NPseudoAtoms, std::vector<Tail>& TempTail, std::vector<double>& Mix_Epsilon, std::vector<double>& Mix_Sigma, double cutoff)
 {
   size_t IJ_Forward = i * NPseudoAtoms + j;
   size_t IJ_Reverse = j * NPseudoAtoms + i;
   TempTail[IJ_Forward].UseTail= true;
   TempTail[IJ_Forward].Energy = GetTailCorrectionValue(Mix_Epsilon[IJ_Forward], Mix_Sigma[IJ_Forward], cutoff);
   if(i!=j) TempTail[IJ_Reverse] = TempTail[IJ_Forward];
-  //printf("TypeI: %zu, TypeJ: %zu, NPseudoAtoms: %zu, Energy: %.5f\n", i, j, NPseudoAtoms, TempTail[IJ_Forward].Energy);
+}
+
+// Polynomial PrepareTailCorrection (Use1264=true)
+static inline void PrepareTailCorrection(size_t i, size_t j, size_t NPseudoAtoms, std::vector<Tail>& TempTail, std::vector<double>& Mix_Epsilon, std::vector<double>& Mix_Sigma, double cutoff, std::vector<double>& Mix_Z, std::vector<double>& Mix_C10)
+{
+  size_t IJ_Forward = i * NPseudoAtoms + j;
+  size_t IJ_Reverse = j * NPseudoAtoms + i;
+  TempTail[IJ_Forward].UseTail= true;
+  TempTail[IJ_Forward].Energy = GetTailCorrectionValue_Coeff(Mix_Epsilon[IJ_Forward], Mix_Sigma[IJ_Forward], Mix_Z[IJ_Forward], Mix_C10[IJ_Forward], cutoff);
+  if(i!=j) TempTail[IJ_Reverse] = TempTail[IJ_Forward];
 }
 /*
 static inline size_t GetTypeForPseudoAtom(PseudoAtomDefinitions& PseudoAtom, std::string& AtomName)
@@ -1068,9 +1118,9 @@ static inline size_t GetTypeFromFFName(Input_Container& Input, std::string& Atom
 }
 
 
-//Function for Overwritten tail corrections
-//For now, it only considers tail correction//
-//Add overwritting LJ//
+//Function for Overwritten VDW parameters from force_field.def
+//When Use1264=false (DEFAULT): original behavior, only handles "mixing rules to overwrite" with epsilon/sigma
+//When Use1264=true: also handles "defined interactions" (GENERIC2_HC) with polynomial coefficients
 void OverWrite_Mixing_Rule(Input_Container& Input)
 {
   std::string scannedLine; std::string str;
@@ -1098,80 +1148,150 @@ void OverWrite_Mixing_Rule(Input_Container& Input)
   std::filesystem::path pathfile = std::filesystem::path("force_field.def");
   if (!std::filesystem::exists(pathfile))
   {
-    //printf("Force Field OverWrite file not found\n");
     return;
   }
   InputFileScope overwrite_scope("force_field.def");
   std::ifstream OverWritefile = OpenTextFileOrThrow("force_field.def");
-  
-  size_t startline = 0; size_t Noverwrite = 0;
+
+  // First pass: find section markers and their sizes
+  size_t defint_startline = 0;   size_t Ndefint = 0;   // "defined interactions" (GENERIC2_HC)
+  size_t mixrule_startline = 0;  size_t Nmixrule = 0;  // "mixing rules to overwrite"
   counter = 0;
   line_number = 0;
-  //check # of mixing rules to overwrite
   while (ReadTrackedLine(OverWritefile, str, line_number, overwrite_scope))
   {
-    if (str.find("mixing rules to overwrite", 0) != std::string::npos) //read OverWriteSize
-    {
-      startline = counter;
-    }
-    if(startline > 0 && (counter == startline + 1)) //Read next line
+    if (str.find("number of defined interactions", 0) != std::string::npos)
+      defint_startline = counter;
+    if(defint_startline > 0 && (counter == defint_startline + 1))
     {
       Split_Tab_Space(termsScannedLined, str);
-      sscanf(termsScannedLined[0].c_str(), "%zu", &Noverwrite);
-      break;
+      sscanf(termsScannedLined[0].c_str(), "%zu", &Ndefint);
+    }
+    if (str.find("mixing rules to overwrite", 0) != std::string::npos)
+      mixrule_startline = counter;
+    if(mixrule_startline > 0 && (counter == mixrule_startline + 1))
+    {
+      Split_Tab_Space(termsScannedLined, str);
+      sscanf(termsScannedLined[0].c_str(), "%zu", &Nmixrule);
     }
     counter ++;
   }
-  //printf("----- OVERWRITTING VDW PARAMETERS -----\n");
-  //printf("There are %zu overwritting entries, starting from line %zu\n", Noverwrite, startline);
-  if(Noverwrite == 0) 
+
+  // When Use1264=false, ignore defined interactions (GENERIC2_HC)
+  if(!Input.Use1264) Ndefint = 0;
+
+  if(Ndefint == 0 && Nmixrule == 0)
   {
+    OverWritefile.close();
     return;
   }
+
   OverWritefile.clear();
   OverWritefile.seekg(0);
   line_number = 0;
 
   size_t FFsize = Input.AtomFF.size();
 
+  // Second pass: process sections
   counter = 0;
   while (ReadTrackedLine(OverWritefile, str, line_number, overwrite_scope))
   {
-    //printf("counter: %zu, %s, shifted: %s\n", counter, (counter >= (startline+3) && counter < (3 + startline + Noverwrite)) ? "true" : "false", shifted ? "true" : "false");
-    if(counter >= (startline+3) && counter < (3 + startline + Noverwrite))
+    // --- Process "defined interactions" section (GENERIC2_HC, only when Use1264=true) ---
+    if(Ndefint > 0 && counter >= (defint_startline+3) && counter < (3 + defint_startline + Ndefint))
     {
-      //printf("cutting string: %s\n", str.c_str());
+      Split_Tab_Space(termsScannedLined, str);
+      if(termsScannedLined.size() >= 9 && termsScannedLined[2] == "GENERIC2_HC")
+      {
+        // GENERIC2_HC: U(r) = p0*exp(-p1*r) - p2/r^4 - p3/r^6 - p4/r^8 - p5/r^12
+        // Ref: haoyuanchen/RASPA-tools LJ1264Potential (Du et al., JCTC 2020)
+        // NOTE: last term is r^-12 (NOT r^-10 like original GENERIC)
+        size_t typeI, typeJ;
+        try {
+          typeI = GetTypeFromFFName(Input, termsScannedLined[0]);
+          typeJ = GetTypeFromFFName(Input, termsScannedLined[1]);
+        } catch(std::runtime_error&) {
+          counter++; continue; // Skip entries for atom types not in our simulation
+        }
+
+        double p2 = std::stod(termsScannedLined[5]);
+        double p3 = std::stod(termsScannedLined[6]);
+        double p5 = std::stod(termsScannedLined[8]);
+
+        // Map GENERIC2_HC → polynomial: C12=-p5, C6=p3, C4=-p2, C10=0
+        double C12_val = -p5 / 1.20272430057;   // r^-12 repulsion
+        double C6_val  = p3 / 1.20272430057;    // r^-6 dispersion
+        double C4_val  = -p2 / 1.20272430057;   // r^-4 charge-induced dipole
+        double C10_val = 0.0;
+
+        Input.Mix_Epsilon[typeI * FFsize + typeJ] = C12_val;
+        Input.Mix_Epsilon[typeJ * FFsize + typeI] = C12_val;
+        Input.Mix_Sigma[typeI * FFsize + typeJ] = C6_val;
+        Input.Mix_Sigma[typeJ * FFsize + typeI] = C6_val;
+        Input.Mix_Z[typeI * FFsize + typeJ] = C4_val;
+        Input.Mix_Z[typeJ * FFsize + typeI] = C4_val;
+        Input.Mix_C10[typeI * FFsize + typeJ] = C10_val;
+        Input.Mix_C10[typeJ * FFsize + typeI] = C10_val;
+        if(shifted)
+        {
+          double shift_val = Get_Shifted_Value_Coeff(C12_val, C6_val, C4_val, C10_val, Input.CutOffVDW);
+          Input.Mix_Shift[typeI * FFsize + typeJ] = shift_val;
+          Input.Mix_Shift[typeJ * FFsize + typeI] = shift_val;
+        }
+      }
+    }
+
+    // --- Process "mixing rules to overwrite" section ---
+    if(Nmixrule > 0 && counter >= (mixrule_startline+3) && counter < (3 + mixrule_startline + Nmixrule))
+    {
       Split_Tab_Space(termsScannedLined, str);
       if(termsScannedLined.size() == 5) //5 entries = LJ mixing rule parameter length
       {
-        //Ow Hw lennard-jones 1.0 1.0
-        //printf("Overwritting parameters for VDW (lennard-jones): %s and %s\n", termsScannedLined[0].c_str(), termsScannedLined[1].c_str());
         size_t typeI = GetTypeFromFFName(Input, termsScannedLined[0]);
         size_t typeJ = GetTypeFromFFName(Input, termsScannedLined[1]);
 
-        double temp_ep = std::stod(termsScannedLined[3])/1.20272430057; //K -> 10J/mol
-        double temp_sig= std::stod(termsScannedLined[4]);               //Angstroem
-       
-        Input.Mix_Epsilon[typeI * FFsize + typeJ] = temp_ep;
-        Input.Mix_Epsilon[typeJ * FFsize + typeI] = temp_ep;
-        Input.Mix_Sigma[typeI * FFsize + typeJ] = temp_sig;
-        Input.Mix_Sigma[typeJ * FFsize + typeI] = temp_sig;
-        if(shifted)
+        double temp_ep = std::stod(termsScannedLined[3])/1.20272430057;
+        double temp_sig= std::stod(termsScannedLined[4]);
+
+        if(Input.Use1264)
         {
-          Input.Mix_Shift[typeI * FFsize + typeJ] = Get_Shifted_Value(temp_ep, temp_sig, Input.CutOffVDW);
-          Input.Mix_Shift[typeJ * FFsize + typeI] = Get_Shifted_Value(temp_ep, temp_sig, Input.CutOffVDW);
+          // Pre-compute polynomial coefficients
+          double sig2 = temp_sig * temp_sig;
+          double sig6 = sig2 * sig2 * sig2;
+          double sig12 = sig6 * sig6;
+          double C12 = 4.0 * temp_ep * sig12;
+          double C6  = 4.0 * temp_ep * sig6;
+          Input.Mix_Epsilon[typeI * FFsize + typeJ] = C12;
+          Input.Mix_Epsilon[typeJ * FFsize + typeI] = C12;
+          Input.Mix_Sigma[typeI * FFsize + typeJ] = C6;
+          Input.Mix_Sigma[typeJ * FFsize + typeI] = C6;
+          Input.Mix_Z[typeI * FFsize + typeJ] = 0.0;
+          Input.Mix_Z[typeJ * FFsize + typeI] = 0.0;
+          Input.Mix_C10[typeI * FFsize + typeJ] = 0.0;
+          Input.Mix_C10[typeJ * FFsize + typeI] = 0.0;
+          if(shifted)
+          {
+            double shift_val = Get_Shifted_Value_Coeff(C12, C6, 0.0, 0.0, Input.CutOffVDW);
+            Input.Mix_Shift[typeI * FFsize + typeJ] = shift_val;
+            Input.Mix_Shift[typeJ * FFsize + typeI] = shift_val;
+          }
+        }
+        else
+        {
+          // Original: store epsilon/sigma directly
+          Input.Mix_Epsilon[typeI * FFsize + typeJ] = temp_ep;
+          Input.Mix_Epsilon[typeJ * FFsize + typeI] = temp_ep;
+          Input.Mix_Sigma[typeI * FFsize + typeJ] = temp_sig;
+          Input.Mix_Sigma[typeJ * FFsize + typeI] = temp_sig;
+          if(shifted)
+          {
+            Input.Mix_Shift[typeI * FFsize + typeJ] = Get_Shifted_Value(temp_ep, temp_sig, Input.CutOffVDW);
+            Input.Mix_Shift[typeJ * FFsize + typeI] = Get_Shifted_Value(temp_ep, temp_sig, Input.CutOffVDW);
+          }
         }
       }
     }
     counter ++;
   }
-  //printf("----- MIXED VDW PARAMETERS (WITH OVERWRITTEN TERMS) [10 J/mol, Angstroem]-----\n");
-  for(size_t ii = 0; ii < FFsize; ii++)
-    for(size_t jj = 0; jj < FFsize; jj++)
-    {
-      //if(ii <= jj) //printf("ii: %zu, jj: %zu, Name_i: %s, Name_j: %s, ep: %.10f, sig: %.10f, shift: %.10f\n", ii,jj,Input.AtomFF[ii].Name.c_str(), Input.AtomFF[jj].Name.c_str(), Input.Mix_Epsilon[ii * FFsize + jj], Input.Mix_Sigma[ii * FFsize + jj], Input.Mix_Shift[ii * FFsize + jj]);
-    }
-  //printf("----- END OF MIXED VDW PARAMETERS (WITH OVERWRITTEN TERMS) -----\n");
   OverWritefile.clear();
   OverWritefile.seekg(0);
   OverWritefile.close();
@@ -1212,7 +1332,10 @@ void OverWriteTailCorrection(Input_Container& Input)
       {
         typeI = GetTypeFromFFName(Input, termsScannedLined[0]);
         typeJ = GetTypeFromFFName(Input, termsScannedLined[1]);
-        PrepareTailCorrection(typeI, typeJ, Input.AtomFF.size(), TempTail, Input.Mix_Epsilon, Input.Mix_Sigma, Input.CutOffVDW);
+        if(Input.Use1264)
+          PrepareTailCorrection(typeI, typeJ, Input.AtomFF.size(), TempTail, Input.Mix_Epsilon, Input.Mix_Sigma, Input.CutOffVDW, Input.Mix_Z, Input.Mix_C10);
+        else
+          PrepareTailCorrection_LJ(typeI, typeJ, Input.AtomFF.size(), TempTail, Input.Mix_Epsilon, Input.Mix_Sigma, Input.CutOffVDW);
       }
     }
     counter ++;    if(counter==3 + OverWriteSize) break; //in case there are extra empty rows, Zhao's note: I am skipping the mixing rule, assuming Lorentz-Berthelot
@@ -1230,12 +1353,12 @@ void ForceField_Processing(Input_Container& Input)
   Input.Mix_Epsilon = std::vector<double>();
   Input.Mix_Sigma   = std::vector<double>();
   Input.Mix_Shift   = std::vector<double>();
+  Input.Mix_Z       = std::vector<double>();
+  Input.Mix_C10     = std::vector<double>();
   Input.Mix_Tail    = std::vector<Tail>(NumberOfDefinitions * NumberOfDefinitions);
 
   //Do mixing rule (assuming Lorentz-Berthelot)
-  //Declare some temporary arrays
-  std::vector<int>Mix_Type; //Force Field Type (Zhao's note: assuming zero, which is Lennard-Jones)
-  double temp_ep = 0.0; double temp_sig = 0.0;
+  std::vector<int>Mix_Type;
   for(size_t i = 0; i < NumberOfDefinitions; i++)
   {
     for(size_t j = 0; j < NumberOfDefinitions; j++)
@@ -1244,36 +1367,53 @@ void ForceField_Processing(Input_Container& Input)
       double eps_j = Input.AtomFF[j].epsilon;
       double sig_i = Input.AtomFF[i].sigma;
       double sig_j = Input.AtomFF[j].sigma;
-      temp_ep = Mixing_Rule_Epsilon(eps_i, eps_j)/1.20272430057; //Zhao's note: caveat here: need to do full energy conversion
-      temp_sig= Mixing_rule_Sigma(sig_i, sig_j);
-      Input.Mix_Epsilon.push_back(temp_ep);
-      Input.Mix_Sigma.push_back(temp_sig);
+      double temp_ep = Mixing_Rule_Epsilon(eps_i, eps_j)/1.20272430057;
+      double temp_sig= Mixing_rule_Sigma(sig_i, sig_j);
 
-      if(Input.AtomFF[i].shift && Input.AtomFF[j].shift)
+      if(Input.Use1264)
       {
-        Input.Mix_Shift.push_back(Get_Shifted_Value(temp_ep, temp_sig, Input.CutOffVDW));
+        // --- Use1264=true: pre-compute polynomial coefficients ---
+        double sig2 = temp_sig * temp_sig;
+        double sig6 = sig2 * sig2 * sig2;
+        double sig12 = sig6 * sig6;
+        double C12 = 4.0 * temp_ep * sig12;
+        double C6  = 4.0 * temp_ep * sig6;
+        Input.Mix_Epsilon.push_back(C12);  // stores C12
+        Input.Mix_Sigma.push_back(C6);     // stores C6
+
+        double C4_i = Input.AtomFF[i].C4;
+        double C4_j = Input.AtomFF[j].C4;
+        double C4_ij = 0.5 * (C4_i + C4_j) / 1.20272430057;
+        Input.Mix_Z.push_back(C4_ij);
+        Input.Mix_C10.push_back(0.0);
+
+        if(Input.AtomFF[i].shift && Input.AtomFF[j].shift)
+          Input.Mix_Shift.push_back(Get_Shifted_Value_Coeff(C12, C6, C4_ij, 0.0, Input.CutOffVDW));
+        else
+          Input.Mix_Shift.push_back(0.0);
+
+        if(Input.AtomFF[i].tail && Input.AtomFF[j].tail)
+          PrepareTailCorrection(i, j, Input.AtomFF.size(), Input.Mix_Tail, Input.Mix_Epsilon, Input.Mix_Sigma, Input.CutOffVDW, Input.Mix_Z, Input.Mix_C10);
       }
       else
       {
-        Input.Mix_Shift.push_back(0.0);
+        // --- Use1264=false (DEFAULT): original epsilon/sigma storage ---
+        Input.Mix_Epsilon.push_back(temp_ep);   // stores epsilon
+        Input.Mix_Sigma.push_back(temp_sig);     // stores sigma
+        Input.Mix_Z.push_back(0.0);
+        Input.Mix_C10.push_back(0.0);
+
+        if(Input.AtomFF[i].shift && Input.AtomFF[j].shift)
+          Input.Mix_Shift.push_back(Get_Shifted_Value(temp_ep, temp_sig, Input.CutOffVDW));
+        else
+          Input.Mix_Shift.push_back(0.0);
+
+        if(Input.AtomFF[i].tail && Input.AtomFF[j].tail)
+          PrepareTailCorrection_LJ(i, j, Input.AtomFF.size(), Input.Mix_Tail, Input.Mix_Epsilon, Input.Mix_Sigma, Input.CutOffVDW);
       }
-      //If atom i needs tail correction OR atom j needs tail correction OR specifically interaction IJ needs it//
-      if(Input.AtomFF[i].tail && Input.AtomFF[j].tail)
-      {
-        PrepareTailCorrection(i, j, Input.AtomFF.size(), Input.Mix_Tail, Input.Mix_Epsilon, Input.Mix_Sigma, Input.CutOffVDW);
-      }
-      Input.Mix_Z.push_back(0.0);
       Input.Mix_Type.push_back(0);
     }
   }
-  //For checking if mixing rule terms are correct//
-  //printf("----- MIXED VDW PARAMETERS -----\n");
-  //for(size_t i = 0; i < Input.Mix_Shift.size(); i++)
-  //{
-    //size_t ii = i/NumberOfDefinitions; size_t jj = i%NumberOfDefinitions;
-    //if(ii <= jj) //printf("i: %zu, ii: %zu, jj: %zu, Name_i: %s, Name_j: %s, ep: %.10f, sig: %.10f, shift: %.10f\n", i,ii,jj,Input.AtomFF[ii].Name.c_str(), Input.AtomFF[jj].Name.c_str(), Input.Mix_Epsilon[i], Input.Mix_Sigma[i], Input.Mix_Shift[i]);
-  //}
-  //printf("----- END OF MIXED VDW PARAMETERS -----\n");
 }
 
 void Copy_InputLoader_Data(Variables& Vars)
@@ -1282,6 +1422,7 @@ void Copy_InputLoader_Data(Variables& Vars)
   Vars.FF.sigma   = convert1DVectortoArray(Vars.Input.Mix_Sigma);
   Vars.FF.z       = convert1DVectortoArray(Vars.Input.Mix_Z);
   Vars.FF.shift   = convert1DVectortoArray(Vars.Input.Mix_Shift);
+  Vars.FF.C10     = convert1DVectortoArray(Vars.Input.Mix_C10);
   Vars.FF.FFType  = convert1DVectortoArray(Vars.Input.Mix_Type);
   Vars.FF.size    = Vars.Input.AtomFF.size();
 
@@ -1289,11 +1430,12 @@ void Copy_InputLoader_Data(Variables& Vars)
   Vars.FF.CutOffVDW   = Vars.Input.CutOffVDW;
   Vars.FF.CutOffCoul  = Vars.Input.CutOffCoul;
   Vars.FF.VDWRealBias = Vars.Input.VDWRealBias;
+  Vars.FF.Use1264     = Vars.Input.Use1264;
   Vars.FF.OverlapCriteria = Vars.Input.OverlapCriteria;
-  
+
   //Copy Tail Corrections//
   for(size_t j = 0; j < Vars.Input.Mix_Tail.size(); j++)
-    if(Vars.Input.Mix_Tail[j].UseTail) 
+    if(Vars.Input.Mix_Tail[j].UseTail)
       Vars.TempComponents.HasTailCorrection = true;
   Vars.TempComponents.TailCorrection    = Vars.Input.Mix_Tail;
 }

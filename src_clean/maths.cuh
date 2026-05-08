@@ -443,19 +443,48 @@ __host__ __device__ void PBC(double3& posvec, double* Cell, double* InverseCell,
   }
 }
 
-static inline __host__ __device__ void VDW(const double* FFarg, const double rr_dot, const double scaling, double* result) //Lennard-Jones 12-6
+static inline __host__ __device__ void VDW(const double* FFarg, const double rr_dot, const double scaling, double* result, bool use1264 = false) //Lennard-Jones (default) or 12-6-4 polynomial
 {
-  // FFarg[0] = epsilon; FFarg[1] = sigma //
-  double arg1 = 4.0 * FFarg[0];
-  double arg2 = FFarg[1] * FFarg[1];
-  double arg3 = FFarg[3]; //the third element of the 3rd dimension of the array
-  double temp = (rr_dot / arg2);
-  double temp3 = temp * temp * temp;
-  double rri3 = 1.0 / (temp3 + 0.5 * (1.0 - scaling) * (1.0 - scaling));
-  double rri6 = rri3 * rri3;
-  double term = arg1 * (rri3 * (rri3 - 1.0)) - arg3;
-  double dlambda_term = scaling * arg1 * (rri6 * (2.0 * rri3 - 1.0));
-  result[0] = scaling * term; result[1] = scaling < 1.0 ? term + (1.0 - scaling) * dlambda_term : 0.0;
+  if(use1264)
+  {
+    // ---- Polynomial VDW mode (Use1264=true) ----
+    // FFarg stores pre-computed coefficients: {C12, C6, C4, shift, C10}
+    // U(r) = C12/r^12 - C6/r^6 + C10/r^10 + C4/r^4 - shift
+    // Activated by "UseLJ1264 yes" in simulation.input
+    // Supports: standard LJ (C4=C10=0), 12-6-4 LJ, GENERIC2_HC (Du et al. JCTC 2020)
+    double C12   = FFarg[0];
+    double C6    = FFarg[1];
+    double C4    = FFarg[2];
+    double shift = FFarg[3];
+    double C10   = FFarg[4];
+
+    double ri2  = 1.0 / rr_dot;
+    double ri4  = ri2 * ri2;
+    double ri6  = ri4 * ri2;
+    double ri10 = ri4 * ri6;
+    double ri12 = ri6 * ri6;
+
+    double term = C12 * ri12 - C6 * ri6 + C10 * ri10 + C4 * ri4 - shift;
+    result[0] = scaling * term;
+    result[1] = 0.0;
+  }
+  else
+  {
+    // ---- Original LJ mode (Use1264=false, default) ----
+    // FFarg stores: {epsilon, sigma, z(unused), shift}
+    // Standard 12-6 LJ with soft-core lambda scaling
+    double arg1 = 4.0 * FFarg[0];
+    double arg2 = FFarg[1] * FFarg[1];
+    double arg3 = FFarg[3];
+    double temp = (rr_dot / arg2);
+    double temp3 = temp * temp * temp;
+    double rri3 = 1.0 / (temp3 + 0.5 * (1.0 - scaling) * (1.0 - scaling));
+    double rri6 = rri3 * rri3;
+    double term = arg1 * (rri3 * (rri3 - 1.0)) - arg3;
+    double dlambda_term = scaling * arg1 * (rri6 * (2.0 * rri3 - 1.0));
+    result[0] = scaling * term;
+    result[1] = scaling < 1.0 ? term + (1.0 - scaling) * dlambda_term : 0.0;
+  }
 }
 
 static inline __host__ __device__ void CoulombReal(const double chargeA, const double chargeB, const double r, const double scaling, double* result, double prefactor, double alpha) //energy = -q1*q2/r
